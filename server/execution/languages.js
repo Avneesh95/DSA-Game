@@ -48,14 +48,14 @@ async function prepare(language, dir, harnessSource) {
     const file = path.join(dir, 'Main.java');
     fs.writeFileSync(file, harnessSource);
     const javacCmd = getJavacCmd();
-    const compile = await runProcess(javacCmd, ['-encoding', 'UTF-8', 'Main.java'], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
+    const compile = await runProcess(javacCmd, ['-J-Xmx256m', '-encoding', 'UTF-8', 'Main.java'], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
     if (compile.code !== 0) {
       return { compileError: compile.stderr || 'javac compilation failed. Please check your syntax or imports.', run: null };
     }
     const javaCmd = getJavaCmd();
     return {
       compileError: null,
-      run: (input, timeoutMs) => runProcess(javaCmd, ['-Xss16m', '-cp', dir, 'Main'], { input, timeoutMs, cwd: dir }),
+      run: (input, timeoutMs) => runProcess(javaCmd, ['-Xmx256m', '-Xss4m', '-cp', dir, 'Main'], { input, timeoutMs, cwd: dir }),
     };
   }
 

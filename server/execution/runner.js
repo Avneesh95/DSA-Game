@@ -71,10 +71,10 @@ function runProcess(cmd, args, { input = '', timeoutMs = 5000, cwd } = {}) {
         // arguments can break out of the ulimit prelude.
         const cpuSeconds = Math.max(1, Math.ceil(timeoutMs / 1000) + 1);
         const prelude = [
-          `ulimit -v ${ULIMIT_VIRTUAL_MEM_KB}`,
-          `ulimit -u ${ULIMIT_MAX_PROCS}`,
-          `ulimit -f ${ULIMIT_MAX_FILE_SIZE_BLOCKS}`,
-          `ulimit -t ${cpuSeconds}`,
+          `ulimit -v ${ULIMIT_VIRTUAL_MEM_KB} 2>/dev/null || true`,
+          `ulimit -u ${ULIMIT_MAX_PROCS} 2>/dev/null || true`,
+          `ulimit -f ${ULIMIT_MAX_FILE_SIZE_BLOCKS} 2>/dev/null || true`,
+          `ulimit -t ${cpuSeconds} 2>/dev/null || true`,
           'exec "$0" "$@"',
         ].join('; ');
         child = spawn('bash', ['-c', prelude, cmd, ...args], { cwd, stdio: ['pipe', 'pipe', 'pipe'] });
