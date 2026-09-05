@@ -16,7 +16,7 @@ services:
     rootDir: server
     plan: free
     region: oregon
-    buildCommand: npm ci --omit=dev
+    buildCommand: bash scripts/install-jdk.sh && npm ci --omit=dev
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit

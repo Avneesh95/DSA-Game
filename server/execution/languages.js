@@ -13,11 +13,18 @@ const COMPILE_TIMEOUT_MS = 20000;
 const isWin = os.platform() === 'win32';
 const exeSuffix = isWin ? '.exe' : '';
 const BUNDLED_JDK_DIR = path.join(__dirname, '..', '.jdk');
-const BUNDLED_JAVAC = path.join(BUNDLED_JDK_DIR, 'bin', 'javac' + exeSuffix);
-const BUNDLED_JAVA = path.join(BUNDLED_JDK_DIR, 'bin', 'java' + exeSuffix);
-const HAS_BUNDLED_JDK = fs.existsSync(BUNDLED_JAVAC) && fs.existsSync(BUNDLED_JAVA);
-const JAVAC_CMD = HAS_BUNDLED_JDK ? BUNDLED_JAVAC : 'javac';
-const JAVA_CMD = HAS_BUNDLED_JDK ? BUNDLED_JAVA : 'java';
+
+function getJavacCmd() {
+  const bundled = path.join(BUNDLED_JDK_DIR, 'bin', 'javac' + exeSuffix);
+  if (fs.existsSync(bundled)) return bundled;
+  return 'javac';
+}
+
+function getJavaCmd() {
+  const bundled = path.join(BUNDLED_JDK_DIR, 'bin', 'java' + exeSuffix);
+  if (fs.existsSync(bundled)) return bundled;
+  return 'java';
+}
 
 /**
  * Prepares a runnable program for one language in `dir` (already written:
@@ -40,13 +47,15 @@ async function prepare(language, dir, harnessSource) {
   if (language === 'java') {
     const file = path.join(dir, 'Main.java');
     fs.writeFileSync(file, harnessSource);
-    const compile = await runProcess(JAVAC_CMD, ['-encoding', 'UTF-8', 'Main.java'], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
+    const javacCmd = getJavacCmd();
+    const compile = await runProcess(javacCmd, ['-encoding', 'UTF-8', 'Main.java'], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
     if (compile.code !== 0) {
-      return { compileError: compile.stderr || 'javac failed', run: null };
+      return { compileError: compile.stderr || 'javac compilation failed. Please check your syntax or imports.', run: null };
     }
+    const javaCmd = getJavaCmd();
     return {
       compileError: null,
-      run: (input, timeoutMs) => runProcess(JAVA_CMD, ['-Xss16m', '-cp', dir, 'Main'], { input, timeoutMs, cwd: dir }),
+      run: (input, timeoutMs) => runProcess(javaCmd, ['-Xss16m', '-cp', dir, 'Main'], { input, timeoutMs, cwd: dir }),
     };
   }
 

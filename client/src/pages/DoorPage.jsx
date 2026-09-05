@@ -160,7 +160,10 @@ export default function DoorPage() {
       const { data } = await submissionApi.run({ problemId: doorData.problem._id, code, language });
       setRunResult({ ...data, mode: 'run' });
       const firstErr = data?.keyResults?.find((k) => k.error || k.stderr);
-      if (firstErr) setRunError(firstErr.error || firstErr.stderr || null);
+      const compileErr = data?.compileError || (data?.status === 'compile_error' ? (firstErr?.error || firstErr?.stderr || 'Compilation error') : null);
+      if (compileErr || firstErr?.error || firstErr?.stderr) {
+        setRunError(compileErr || firstErr?.error || firstErr?.stderr || null);
+      }
     } catch (err) {
       setRunError(err.response?.data?.message || err.message || 'Code execution failed');
     } finally {
@@ -185,7 +188,10 @@ export default function DoorPage() {
       setRunResult({ keyResults: data.keyResults, mode: 'submit', doorUnlocked: data.doorUnlocked });
       
       const firstErr = data?.keyResults?.find((k) => k.error || k.stderr);
-      if (firstErr) setRunError(firstErr.error || firstErr.stderr || null);
+      const compileErr = data?.compileError || (data?.status === 'compile_error' ? (firstErr?.error || firstErr?.stderr || 'Compilation error') : null);
+      if (compileErr || firstErr?.error || firstErr?.stderr) {
+        setRunError(compileErr || firstErr?.error || firstErr?.stderr || null);
+      }
 
       if (data.doorUnlocked) {
         setShowUnlockOverlay(true);

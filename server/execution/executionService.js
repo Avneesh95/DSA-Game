@@ -150,6 +150,7 @@ async function runAgainstKeys({ code, language, keys, problem }) {
     if (prepared.compileError) {
       return {
         status: 'compile_error',
+        compileError: prepared.compileError,
         keyResults: keys.map((k) => errorResult(k, null, prepared.compileError)),
         executionTime: Date.now() - start,
         memory: 0,
@@ -289,12 +290,15 @@ async function runOneKey(prepared, key) {
 }
 
 function errorResult(key, message, detail) {
+  const errMsg = detail || message || 'Compilation or execution error';
   return {
     keyId: key._id,
     keyType: key.type,
     passed: false,
     isHidden: key.isHidden,
     actualOutput: key.isHidden ? null : (message || (detail ? detail.split('\n')[0].slice(0, 200) : 'Error')),
+    error: errMsg,
+    stderr: detail || message || null,
     runtimeMs: 0,
     _internalStatus: 'compile_error',
   };
