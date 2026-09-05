@@ -64,9 +64,9 @@ async function prepare(language, dir, harnessSource) {
     fs.writeFileSync(file, harnessSource);
     fs.copyFileSync(VENDOR_JSON_HPP, path.join(dir, 'json.hpp'));
     const outFile = path.join(dir, isWin ? 'a.exe' : 'a.out');
-    const compile = await runProcess('g++', ['-std=c++17', '-O2', '-o', outFile, file], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
+    const compile = await runProcess('g++', ['-std=c++17', '-O0', '-o', outFile, file], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
     if (compile.code !== 0) {
-      return { compileError: compile.stderr || 'g++ failed', run: null };
+      return { compileError: compile.stderr || 'g++ compilation failed', run: null };
     }
     return {
       compileError: null,
@@ -78,9 +78,9 @@ async function prepare(language, dir, harnessSource) {
     const file = path.join(dir, 'main.c');
     fs.writeFileSync(file, harnessSource);
     const outFile = path.join(dir, isWin ? 'a.exe' : 'a.out');
-    const compile = await runProcess('gcc', ['-std=gnu11', '-O2', '-o', outFile, file, '-lm'], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
+    const compile = await runProcess('gcc', ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
     if (compile.code !== 0) {
-      return { compileError: compile.stderr || 'gcc failed', run: null };
+      return { compileError: compile.stderr || 'gcc compilation failed', run: null };
     }
     return {
       compileError: null,
