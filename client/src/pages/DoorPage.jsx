@@ -158,7 +158,7 @@ export default function DoorPage() {
     setRunError(null);
     try {
       const { data } = await submissionApi.run({ problemId: doorData.problem._id, code, language });
-      setRunResult(data);
+      setRunResult({ ...data, mode: 'run' });
       const firstErr = data?.keyResults?.find((k) => k.error || k.stderr);
       if (firstErr) setRunError(firstErr.error || firstErr.stderr || null);
     } catch (err) {
@@ -182,7 +182,7 @@ export default function DoorPage() {
         hintsUsed,
       });
       setSubmitResult(data);
-      setRunResult({ keyResults: data.keyResults });
+      setRunResult({ keyResults: data.keyResults, mode: 'submit', doorUnlocked: data.doorUnlocked });
       
       const firstErr = data?.keyResults?.find((k) => k.error || k.stderr);
       if (firstErr) setRunError(firstErr.error || firstErr.stderr || null);
@@ -225,10 +225,13 @@ export default function DoorPage() {
   }
 
   const { problem, door } = doorData;
+  const isRunMode          = runResult?.mode === 'run';
+  const totalKeysTested    = runResult?.keyResults?.length || 0;
   const keysCollectedCount = (runResult?.keyResults || []).filter((r) => r.passed).length;
-  const allKeysCollected   = keysCollectedCount === problem.keys.length && runResult?.keyResults?.length;
-  const passRate           = runResult?.keyResults?.length
-    ? Math.round((keysCollectedCount / problem.keys.length) * 100)
+  const allTestedPassed    = totalKeysTested > 0 && keysCollectedCount === totalKeysTested;
+  const allKeysCollected   = keysCollectedCount === problem.keys.length && totalKeysTested === problem.keys.length;
+  const passRate           = totalKeysTested
+    ? Math.round((keysCollectedCount / totalKeysTested) * 100)
     : null;
 
   return (
@@ -244,11 +247,11 @@ export default function DoorPage() {
         result={submitResult?.doorUnlocked ? {
           pattern: problem.pattern,
           difficulty: problem.difficulty,
-          timeComplexity: problem.expectedComplexity.time,
-          spaceComplexity: problem.expectedComplexity.space,
-          attempts: submitResult.progress.attempts,
-          hintsUsed: submitResult.progress.hintsUsed,
-          xp: submitResult.xpBreakdown?.total || 0,
+          timeComplexity: problem.expectedComplexity?.time,
+          spaceComplexity: problem.expectedComplexity?.space,
+          attempts: submitResult.progress?.attempts || 1,
+          hintsUsed: submitResult.progress?.hintsUsed || 0,
+          xp: submitResult.xpBreakdown?.total || problem.xp || 50,
         } : null}
       />
 
@@ -492,11 +495,26 @@ export default function DoorPage() {
                   </span>
                 )}
                 {runResult && (
-                  <span className="flex items-center gap-1">
-                    {allKeysCollected
-                      ? <><CheckCircle size={11} className="text-[#34c759]" /> All keys collected</>
-                      : <><XCircle size={11} className="text-[#ff3b30]" /> {keysCollectedCount}/{problem.keys.length} keys</>
-                    }
+                  <span className="flex items-center gap-1 font-medium">
+                    {isRunMode ? (
+                      allTestedPassed ? (
+                        <span className="text-[#34c759] flex items-center gap-1">
+                          <CheckCircle size={11} /> {keysCollectedCount}/{totalKeysTested} Public Keys Passed
+                        </span>
+                      ) : (
+                        <span className="text-[#ff3b30] flex items-center gap-1">
+                          <XCircle size={11} /> {keysCollectedCount}/{totalKeysTested} Public Keys
+                        </span>
+                      )
+                    ) : allKeysCollected ? (
+                      <span className="text-[#34c759] flex items-center gap-1 font-semibold">
+                        <CheckCircle size={11} /> All {keysCollectedCount} Keys Collected!
+                      </span>
+                    ) : (
+                      <span className="text-[#ff3b30] flex items-center gap-1 font-semibold">
+                        <XCircle size={11} /> {keysCollectedCount}/{problem.keys.length} Keys
+                      </span>
+                    )}
                   </span>
                 )}
               </div>
@@ -607,10 +625,22 @@ export default function DoorPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="door-panel border-glow-emerald/70 text-center"
+              className="door-panel border-glow-emerald/70 text-center bg-emerald-950/20"
             >
               <p className="text-glow-emerald font-display text-sm flex items-center justify-center gap-2">
                 <Lightbulb size={16} /> ALL KEYS COLLECTED — DOOR UNLOCKED
+              </p>
+            </motion.div>
+          )}
+
+          {isRunMode && allTestedPassed && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="door-panel border-amber-500/40 bg-amber-950/20 text-center py-3"
+            >
+              <p className="text-amber-400 text-xs font-semibold flex items-center justify-center gap-2">
+                <CheckCircle size={14} className="text-[#34c759]" /> All public test keys passed! Click <span className="bg-[#ff9500] text-white px-2 py-0.5 rounded text-[11px] font-bold">Submit</span> to test against hidden keys & unlock the door.
               </p>
             </motion.div>
           )}

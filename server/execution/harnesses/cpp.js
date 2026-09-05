@@ -136,7 +136,9 @@ function buildCppHarness(userCode, classified) {
   });
 
   const isVoid = returnType.kind === 'void';
-  const callStmt = isVoid
+  const callStmt = isVoid && params.length > 0
+    ? `    sol.${methodName}(${callArgs.join(', ')});\n    json _out = ${buildResultToJsonExpr(params[0], 'arg0')};`
+    : isVoid
     ? `    sol.${methodName}(${callArgs.join(', ')});\n    json _out = nullptr;`
     : `    auto _result = sol.${methodName}(${callArgs.join(', ')});\n    json _out = ${buildResultToJsonExpr(returnType, '_result')};`;
 

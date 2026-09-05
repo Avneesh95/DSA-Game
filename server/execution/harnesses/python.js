@@ -158,7 +158,9 @@ ${argLines.join('\n')}
     except AttributeError:
         _method = getattr(_sol, ${JSON.stringify(methodName)})
     _result = _method(${callArgs.join(', ')})
-    _out = ${buildResultExpr(returnType, '_result')}
+    if _result is None and ${params.length} > 0:
+        _result = _arg_0
+    _out = ${returnType.kind === 'void' && params.length > 0 ? buildResultExpr(params[0], '_arg_0') : buildResultExpr(returnType, '_result')}
     print(json.dumps(_out))
 
 if __name__ == '__main__':

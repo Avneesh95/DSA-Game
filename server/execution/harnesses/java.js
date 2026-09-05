@@ -70,7 +70,9 @@ function buildJavaHarness(userCode, classified) {
   const extraImports = [...new Set(importLines)].filter((imp) => !imp.includes('java.util.*')).join('\n');
 
   const isVoid = returnType.kind === 'void';
-  const callStmt = isVoid
+  const callStmt = isVoid && params.length > 0
+    ? `        _sol.${methodName}(${callArgs.join(', ')});\n        Object _out = _Json.toJson(arg0);`
+    : isVoid
     ? `        _sol.${methodName}(${callArgs.join(', ')});\n        Object _out = null;`
     : `        ${returnJavaType} _result = _sol.${methodName}(${callArgs.join(', ')});\n        Object _out = _Json.toJson(_result);`;
 

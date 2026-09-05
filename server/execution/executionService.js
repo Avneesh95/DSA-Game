@@ -14,17 +14,27 @@ const { makeTempDir, cleanupDir } = require('./runner');
 const SUPPORTED_LANGUAGES = new Set(['java', 'python', 'cpp', 'c']);
 const RUN_TIMEOUT_MS = 6000;
 
-/** Deep-equal for JSON values, numbers, strings, and arrays. */
+/** Deep-equal for JSON values, numbers, strings, booleans, and arrays (including unordered collections). */
 function jsonValuesEqual(a, b) {
   if (a === b) return true;
   if (a === null || b === null || a === undefined || b === undefined) return a === b;
   
+  // Handle numbers
   if (typeof a === 'number' && typeof b === 'number') {
     if (Number.isInteger(a) && Number.isInteger(b)) return a === b;
     return Math.abs(a - b) < 1e-4;
   }
 
-  // Handle number to string representation equality (e.g. -1 vs "-1")
+  // Handle boolean to string equality (e.g. true vs "true", false vs "false")
+  if (typeof a === 'boolean' || typeof b === 'boolean') {
+    const boolA = typeof a === 'boolean' ? a : (String(a).toLowerCase() === 'true' ? true : String(a).toLowerCase() === 'false' ? false : null);
+    const boolB = typeof b === 'boolean' ? b : (String(b).toLowerCase() === 'true' ? true : String(b).toLowerCase() === 'false' ? false : null);
+    if (boolA !== null && boolB !== null) {
+      return boolA === boolB;
+    }
+  }
+
+  // Handle number to string representation equality (e.g. -1 vs "-1", 2.0 vs "2")
   if ((typeof a === 'number' && typeof b === 'string') || (typeof a === 'string' && typeof b === 'number')) {
     const numA = Number(a);
     const numB = Number(b);
@@ -34,9 +44,44 @@ function jsonValuesEqual(a, b) {
     return String(a).trim() === String(b).trim();
   }
 
+  // Handle arrays
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
-    return a.every((v, i) => jsonValuesEqual(v, b[i]));
+
+    // 1. Direct ordered check
+    const exactMatch = a.every((v, i) => jsonValuesEqual(v, b[i]));
+    if (exactMatch) return true;
+
+    // 2. Unordered 2D array matching (e.g. 3Sum, Group Anagrams, Subsets, Permutations, Combination Sum)
+    const is2DA = a.every(item => Array.isArray(item));
+    const is2DB = b.every(item => Array.isArray(item));
+
+    if (is2DA && is2DB) {
+      const canonicalizeRow = (row) => {
+        return [...row].map(x => typeof x === 'object' && x !== null ? JSON.stringify(x) : x).sort((x, y) => {
+          if (typeof x === 'number' && typeof y === 'number') return x - y;
+          return String(x).localeCompare(String(y));
+        });
+      };
+
+      const sortedA = a.map(canonicalizeRow).sort((r1, r2) => JSON.stringify(r1).localeCompare(JSON.stringify(r2)));
+      const sortedB = b.map(canonicalizeRow).sort((r1, r2) => JSON.stringify(r1).localeCompare(JSON.stringify(r2)));
+
+      if (sortedA.every((rowA, i) => jsonValuesEqual(rowA, sortedB[i]))) {
+        return true;
+      }
+    }
+
+    // 3. For 2-element index pair (like Two Sum [0, 1] vs [1, 0])
+    if (a.length === 2 && typeof a[0] === 'number' && typeof a[1] === 'number' && typeof b[0] === 'number' && typeof b[1] === 'number') {
+      const sortedA = [...a].sort((x, y) => x - y);
+      const sortedB = [...b].sort((x, y) => x - y);
+      if (sortedA[0] === sortedB[0] && sortedA[1] === sortedB[1]) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   if (typeof a === 'object' && typeof b === 'object') {

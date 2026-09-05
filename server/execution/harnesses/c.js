@@ -349,7 +349,20 @@ function buildCHarness(userCode, classified, javaSourceForCSig) {
   let printStmt;
   const rt = classified.returnType;
   if (rt.kind === 'void') {
-    printStmt = `    ${sig.methodName}(${allCallArgs});\n    printf("null\\n");`;
+    const p0 = classified.params[0];
+    if (p0 && p0.kind === 'listnode') {
+      printStmt = `    ${sig.methodName}(${allCallArgs});\n    p_listnode(_p0);\n    printf("\\n");`;
+    } else if (p0 && p0.depth === 1) {
+      if (p0.kind === 'string' || p0.kind === 'char') {
+        printStmt = `    ${sig.methodName}(${allCallArgs});\n    p_str_arr(_p0, _p0Size);\n    printf("\\n");`;
+      } else {
+        printStmt = `    ${sig.methodName}(${allCallArgs});\n    p_int_arr(_p0, _p0Size);\n    printf("\\n");`;
+      }
+    } else if (p0 && p0.depth === 2) {
+      printStmt = `    ${sig.methodName}(${allCallArgs});\n    p_int_arr2(_p0, _p0Size, _p0ColSize);\n    printf("\\n");`;
+    } else {
+      printStmt = `    ${sig.methodName}(${allCallArgs});\n    printf("null\\n");`;
+    }
   } else if (rt.kind === 'listnode') {
     printStmt = rt.depth === 1
       ? `    // ListNode[] returns not present in this problem set; falls back to null.\n    ${cSig.cReturnType} _result = ${sig.methodName}(${allCallArgs});\n    printf("null\\n");`

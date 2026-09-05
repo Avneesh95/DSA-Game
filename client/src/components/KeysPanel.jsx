@@ -19,35 +19,57 @@ export default function KeysPanel({ keys, keyResults }) {
           return (
             <div
               key={key._id}
-              className="flex items-center justify-between text-sm rounded-lg bg-dungeon-900/60 border border-dungeon-700 px-3 py-2"
+              className={`flex items-center justify-between text-sm rounded-lg border px-3.5 py-2.5 transition-all ${
+                collected
+                  ? 'bg-emerald-950/20 border-emerald-500/40'
+                  : attempted
+                  ? 'bg-rose-950/20 border-rose-500/40'
+                  : 'bg-dungeon-900/60 border-dungeon-700/60'
+              }`}
             >
-              <div className="flex items-center gap-2">
-                {key.isHidden && !collected ? (
-                  <Lock size={14} className="text-slate-500" />
-                ) : collected ? (
-                  <CheckCircle2 size={14} className="text-glow-emerald" />
+              <div className="flex items-center gap-2.5">
+                {collected ? (
+                  <CheckCircle2 size={15} className="text-[#34c759] shrink-0" />
                 ) : attempted ? (
-                  <XCircle size={14} className="text-glow-rose" />
+                  <XCircle size={15} className="text-[#ff3b30] shrink-0" />
+                ) : key.isHidden ? (
+                  <Lock size={14} className="text-slate-500 shrink-0" />
                 ) : (
-                  <KeyRound size={14} className="text-slate-500" />
+                  <KeyRound size={14} className="text-glow-gold/70 shrink-0" />
                 )}
-                <span className={key.isHidden ? 'text-slate-500 italic' : 'text-slate-200'}>
-                  {key.type}
-                  {key.isHidden ? ' (hidden)' : ''}
-                </span>
+                <div>
+                  <span className={key.isHidden && !collected ? 'text-slate-400 font-medium' : 'text-slate-200 font-medium'}>
+                    {key.type}
+                  </span>
+                  {key.isHidden && (
+                    <span className="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-400">
+                      Hidden
+                    </span>
+                  )}
+                </div>
               </div>
 
               <AnimatePresence mode="wait">
-                {attempted && (
+                {attempted ? (
                   <motion.span
-                    key={collected ? 'collected' : 'locked'}
-                    initial={{ opacity: 0, scale: 0.8 }}
+                    key={collected ? 'collected' : 'failed'}
+                    initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className={collected ? 'text-glow-emerald text-xs font-semibold' : 'text-glow-rose text-xs font-semibold'}
+                    className={`text-xs font-semibold tracking-wide flex items-center gap-1 ${
+                      collected ? 'text-[#34c759]' : 'text-[#ff3b30]'
+                    }`}
                   >
-                    {collected ? '✓ KEY COLLECTED' : '✗ KEY STILL LOCKED'}
+                    {collected ? '✓ KEY COLLECTED' : '✗ KEY LOCKED'}
                   </motion.span>
+                ) : key.isHidden ? (
+                  <span className="text-slate-500 text-[11px] font-mono">
+                    Tests on Submit
+                  </span>
+                ) : (
+                  <span className="text-slate-500 text-[11px] font-mono">
+                    Public Key
+                  </span>
                 )}
               </AnimatePresence>
             </div>
