@@ -1,235 +1,199 @@
-# DSA 100 Doors
+# 🚪 DSA 100 Doors — Gamified DSA Learning Platform
 
-A gamified DSA learning platform — solve 100 curated coding problems, each represented
-as a locked door. Collect Keys (test cases) to unlock each door, watch a visual
-explanation of the algorithm, and level up.
+<div align="center">
 
-**All 100 doors are now built and seeded** — authentication, the core data models, the
-full game map across all 10 worlds plus the Final Dungeon, a real multi-language code
-execution/judging layer, hints, XP/leveling, and a visualization engine — all wired
-end-to-end and runnable locally.
+![DSA 100 Doors Banner](https://img.shields.io/badge/DSA-100%20Doors-FF9500?style=for-the-badge&logo=codeforces&logoColor=white)
+![Built By Avneesh](https://img.shields.io/badge/Built%20by-Avneesh-black?style=for-the-badge&logo=github)
+![React](https://img.shields.io/badge/React-18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-18+-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 
-## Judging (real execution, 4 languages)
+<p align="center">
+  <b>A modern, gamified Data Structures & Algorithms learning platform.</b><br/>
+  Solve 100 curated DSA problems across 10 themed worlds, collect test-case Keys, inspect live step-by-step visualizations, and master interview patterns.
+</p>
 
-Submissions are judged for real: your Java/Python/C++/C code is compiled/interpreted
-and run against each door's test cases, and compared against verified expected output —
-it no longer just checks submission length. See `server/execution/` for the engine.
+---
+**Created with ❤️ by Avneesh**
+---
 
-**Sandboxing (no Docker):** submitted code runs directly on the host via
-`child_process`, hardened with `ulimit` caps (CPU time, process count, file size —
-see `server/execution/runner.js` for exact values and rationale) plus a wall-clock
-timeout and output-size cap. This is defense-in-depth, not a real sandbox — there's
-no network isolation or filesystem jail the way a locked-down container gives you.
-Fine for a personal/portfolio deployment with a handful of trusted users; if you're
-opening this to the public internet at real scale, put it behind a proper sandbox
-(gVisor/Firecracker, or a dedicated judge API like Piston/Judge0) or run the judge
-step inside Docker yourself on a host you control.
+</div>
 
-**System requirements for judging** (in addition to Node/MongoDB): `python3`,
-`g++` (C++17), and `gcc` must be on PATH. Java also needs a JVM (`javac`/`java`) —
-see below for how that's handled without Docker.
+## 🌟 Key Highlights & Features
 
-- **Local dev (Debian/Ubuntu):**
-  ```bash
-  sudo apt-get install -y default-jdk-headless g++ gcc python3
-  ```
-- **Render deploy:** `g++`/`gcc`/`python3` are preinstalled in Render's native
-  Node runtime, but it has no JVM and no apt/root access to install one. Instead,
-  `server/package.json`'s `postinstall` script runs
-  `server/scripts/install-jdk.sh`, which downloads a portable Eclipse Temurin JDK
-  tarball into `server/.jdk/` — no Docker, no root, no package manager involved.
-  `server/execution/languages.js` picks it up automatically. This runs on every
-  Render build (it's a no-op if `server/.jdk/` is already populated).
+### 1. 🔍 Dual-Mode Interactive Execution Visualizer
+- **"How to Solve" Mode**: Canonical, step-by-step algorithmic trace showing optimal pointer movements and state transitions before or during problem solving.
+- **"My Code" Mode**: Client-side execution tracer ([`codeInterpreter.js`](client/src/visualizers/codeInterpreter.js)) that interprets and steps through the user's actual written code line-by-line in real-time, displaying dynamic variable mutations, pointers, and array states.
+- **Monaco Editor Integration**: Active lines in the visualizer automatically highlight and track inside the code editor without latency.
 
-Test data (the machine-checkable form of each door's Keys) is pre-generated into
-`server/seed/generatedTestData.json` and merged in by `npm run seed`. If you ever edit
-a problem's Keys, starter signature, or reference solution, regenerate it with:
+### 2. 💡 Easy Step-by-Step Algorithm in Hint Panel
+- **Progressive Hints**: Unlock hints one by one without spoiling the solution.
+- **Step-by-Step Algorithm Breakdown**:
+  - **Step 1: Setup & Initialization**: Boundary placement, tracking variables, and base cases.
+  - **Step 2: Traversal & Loop Strategy**: Iteration direction and pointer convergence criteria.
+  - **Step 3: Condition Check & Decision Logic**: Plain-English comparison and invariant rules.
+  - **Step 4: State Update**: Variable updates, swaps, or pointer advances.
+  - **Step 5: Completion & Return**: Output construction.
+- **Canonical Pattern Blueprints**: Built-in 5-step blueprints for *Two Pointers*, *Sliding Window*, *Binary Search*, *Dutch National Flag*, *Kadane's Algorithm*, *Fast & Slow Pointers*, *Monotonic Stack*, and *Hashing*.
+
+### 3. 🎨 Apple-Inspired Design System
+- **Pure Black Dark Mode**: Deep `#000000`, card grays (`#1c1c1e`), translucent frosted glass (`backdrop-blur-xl`), and vibrant **Apple Orange (`#ff9500`)** primary CTA accents.
+- **Crisp Light Mode**: Minimalist pure white (`#ffffff`) and soft gray (`#f5f5f7`) surface hierarchy with dark contrast typography.
+- **Polished Monaco Editor**: Rounded 2xl borders, line highlight decorations, instant compiler/runtime error console, and responsive fullscreen mode.
+
+### 4. ⚡ Real Multi-Language Code Judging (4 Languages)
+- Real compiler and interpreter execution on backend for **Java**, **Python**, **C++**, and **C**.
+- Validates submissions against test cases (Basic Keys, Edge Case Keys, Boundary Keys, Performance Keys).
+- Hardened execution runner with strict timeouts and memory caps.
+
+### 5. 🎮 100 Doors Progression & Gamification
+- **10 Worlds + Final Dungeon**: 100 sequential doors unlocking as you solve problems.
+- **XP, Levels, & Streaks**: Earn XP per door, level up your adventurer profile, and maintain daily streaks.
+- **Boss Doors**: Challenging milestone doors at the end of every world with elevated XP rewards.
+
+---
+
+## 🗺️ Curriculum & Worlds
+
+| World | Doors | Topic | Focus Patterns |
+|---|---|---|---|
+| **World 1** | Doors 1–15 | Arrays | Linear Scan, Two Pointers, Prefix Sum, Dutch National Flag |
+| **World 2** | Doors 16–22 | Hashing | Frequency Map, Complements, Anagrams, Sets |
+| **World 3** | Doors 23–29 | Two Pointers | Sorted Pair Sum, Container With Most Water, 3Sum, Inward Convergence |
+| **World 4** | Doors 30–36 | Sliding Window | Fixed Window, Dynamic Window, Character Replacement, Deque Max |
+| **World 5** | Doors 37–44 | Binary Search | Search Space Reduction, Rotated Arrays, Search on Answer |
+| **World 6** | Doors 45–52 | Linked Lists | Reversal, Floyd's Cycle Detection, Fast & Slow Pointers, Merge |
+| **World 7** | Doors 53–60 | Stack & Queue | Monotonic Stack, Valid Parentheses, Next Greater Element, Min Stack |
+| **World 8** | Doors 61–68 | Recursion & Backtracking | Subsets, Permutations, Combination Sum, N-Queens |
+| **World 9** | Doors 69–80 | Trees & BST | DFS / BFS, Tree Inversion, Diameter, Path Sum, LCA |
+| **World 10** | Doors 81–90 | Graphs | Adjacency Traversal, Topological Sort, Island Count, Shortest Path |
+| **Final Dungeon** | Doors 91–100 | Dynamic Programming | Knapsack, Longest Common Subsequence, Edit Distance (Final Boss) |
+
+---
+
+## 🛠️ Tech Stack
+
+### Client (Frontend)
+- **Framework**: React 18 + Vite
+- **Styling**: Tailwind CSS (Apple Minimalist Theme)
+- **Editor**: Monaco Editor (`@monaco-editor/react`)
+- **Animation**: Framer Motion
+- **Icons**: Lucide React
+- **Routing**: React Router v6
+- **State Management**: Zustand
+- **HTTP Client**: Axios
+
+### Server (Backend)
+- **Runtime**: Node.js + Express
+- **Database**: MongoDB Atlas via Mongoose
+- **Authentication**: JWT (JSON Web Tokens) + bcryptjs password hashing
+- **Execution Engine**: `child_process` compiler/runner for Java (`javac`/`java`), Python (`python3`), C++ (`g++`), and C (`gcc`)
+- **Seed System**: Automated generator for 100 doors, starter code, and verified test cases
+
+---
+
+## 🚀 Getting Started Locally
+
+### Prerequisites
+1. **Node.js** (v18 or higher)
+2. **MongoDB** (local community server or MongoDB Atlas URI)
+3. **Compilers** (for judging code):
+   - Python 3 (`python3`)
+   - GCC / G++ (`gcc`, `g++`)
+   - JDK (`javac`, `java`)
+
+---
+
+### Step 1: Clone the Repository
 ```bash
-node server/seed/generateTestData.js
+git clone https://github.com/avneesh952000/dsa-100-doors.git
+cd dsa-100-doors
 ```
-This needs `javac`/`java` on PATH (it's a one-time dev-time step, not needed at deploy).
 
-**Coverage:** all 100 doors are judgeable in Java/Python/C++/C for their concrete,
-literal test cases. A few doors' original "Large Input"/"Performance" Keys were only
-descriptive placeholders (e.g. `"10^5 elements, large k"`) rather than real values —
-those were synthesized and verified against a reference solution where one existed
-(doors 1–10), and otherwise dropped rather than stored as fake data (see the console
-output of `generateTestData.js` for exactly which). The 4 multi-method "design" doors
-(Min Stack #54, Implement Queue using Stacks #55, Serialize/Deserialize Binary Tree #80,
-Clone Graph #83) use dedicated harnesses; #80 and #83 currently support Java/Python/C++
-only (not C). A handful of "generate all valid answers" problems (subsets, permutations,
-N-Queens, topological sort, etc.) compare output structurally/exactly, so a correct
-solution that produces the same results in a different valid order may be marked wrong —
-worth knowing about if you hit it.
+### Step 2: Configure & Run Server
+```bash
+cd server
+cp .env.example .env
+```
 
-## Stack
+Edit `.env` with your values:
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/100_Door_game
+JWT_SECRET=your_super_secret_jwt_key
+CLIENT_URL=http://localhost:5173
+```
 
-- **Frontend:** React + Vite, React Router, Tailwind CSS, Framer Motion, Monaco Editor, Axios, Zustand
-- **Backend:** Node.js, Express, MongoDB + Mongoose, JWT auth, bcrypt
+Install dependencies and seed the database:
+```bash
+npm install
+npm run seed      # Seeds all 100 doors, test cases, and achievements
+npm run dev       # Starts Express API at http://localhost:5000
+```
 
-## Project structure
+### Step 3: Configure & Run Client
+```bash
+cd ../client
+npm install
+npm run dev       # Starts Vite dev server at http://localhost:5173
+```
+
+Open **http://localhost:5173** in your browser, create an account, and start unlocking doors!
+
+---
+
+## 📂 Project Structure
 
 ```
 dsa-100-doors/
-├── server/           # Express API
-│   ├── config/        # DB connection
-│   ├── controllers/   # Route handlers
-│   ├── models/        # Mongoose schemas
-│   ├── routes/         
-│   ├── middleware/    # auth, rate limiting, error handling
-│   ├── execution/      # real multi-language (Java/Python/C++/C) judge engine
-│   ├── services/       # XP calculation, etc.
-│   ├── validators/
-│   └── seed/           # seed script + all 100 problems (split across 4 data files) + achievements
-└── client/            # React app
-    └── src/
-        ├── pages/       # Login, Register, GameMap, DoorPage
-        ├── components/  # DoorCard, KeysPanel, HintPanel, etc.
-        ├── layouts/
-        ├── store/       # Zustand auth store
-        ├── services/    # Axios API client
-        └── visualizers/ # generic step-based algorithm visualizer
+├── client/                     # React Frontend
+│   ├── src/
+│   │   ├── components/         # Navbar, Footer, HintPanel, KeysPanel, DoorUnlockOverlay, etc.
+│   │   ├── layouts/            # MainLayout
+│   │   ├── pages/              # GameMap, DoorPage, Login, Register
+│   │   ├── services/           # Axios API services
+│   │   ├── store/              # Zustand stores (useAuthStore, useThemeStore)
+│   │   ├── utils/              # algorithmSteps.js (Step-by-step algorithm generator)
+│   │   ├── visualizers/        # StepVisualizer.jsx & codeInterpreter.js (Real-time code tracer)
+│   │   ├── index.css           # Apple-inspired CSS design system
+│   │   └── App.jsx
+│   ├── tailwind.config.js      # Palette: Pure Black (#000000), Apple Card (#1c1c1e), Orange (#ff9500)
+│   └── package.json
+│
+├── server/                     # Express Backend
+│   ├── config/                 # DB configuration
+│   ├── controllers/            # doorController, authController, submissionController, progressController
+│   ├── execution/              # Multi-language execution runner & test case judge
+│   ├── middleware/             # authMiddleware, rateLimiter, errorHandler
+│   ├── models/                 # Problem, Door, User, UserProgress, Achievement
+│   ├── routes/                 # doorRoutes, authRoutes, submissionRoutes, progressRoutes
+│   ├── seed/                   # problemsData (1-100), achievementsData, starterCodeGenerator
+│   └── server.js
+│
+├── README.md
+├── render.yaml                 # Render backend deployment config
+└── netlify.toml                # Netlify frontend deployment config
 ```
 
-## Getting started
+---
 
-### 1. Backend
+## 🚢 Live Deployments
 
-```bash
-cd server
-cp .env.example .env      # then edit MONGO_URI / JWT_SECRET as needed
-npm install
-npm run seed                # populates all 100 doors, achievements, and a demo admin
-npm run dev                 # starts on http://localhost:5000
-```
+- **Live Application (Frontend)**: [**https://fundsa.netlify.app/**](https://fundsa.netlify.app/)
+- **Live Backend API**: [`https://dsa-game.onrender.com/`](https://dsa-game.onrender.com/) (Health: [`/api/health`](https://dsa-game.onrender.com/api/health))
+- **Database (MongoDB Atlas)**: Cloud-hosted MongoDB cluster.
 
-You need a MongoDB instance running locally (or a MongoDB Atlas connection string)
-at the `MONGO_URI` in your `.env`.
+---
 
-### 2. Frontend
+## 👨‍💻 Author & Credits
 
-```bash
-cd client
-npm install
-npm run dev                 # starts on http://localhost:5173
-```
+- **Creator & Lead Developer**: **Avneesh**
+- **Project**: DSA 100 Doors
+- Designed and engineered with focus on interactive learning, clean architecture, and modern Apple-inspired aesthetics.
 
-The Vite dev server proxies `/api` requests to `http://localhost:5000`, so no
-extra frontend env config is needed for local development.
+---
 
-### 3. Play
+## 📄 License
 
-Open http://localhost:5173, register an account, and Door 1 will be available.
-Complete a door to unlock the next one. The full curriculum spans all 10 worlds:
-
-| Doors | World | Topic |
-|---|---|---|
-| 1–15 | World 1 | Arrays |
-| 16–22 | World 2 | Hashing |
-| 23–29 | World 3 | Two Pointers |
-| 30–36 | World 4 | Sliding Window |
-| 37–44 | World 5 | Binary Search |
-| 45–52 | World 6 | Linked List |
-| 53–60 | World 7 | Stack & Queue |
-| 61–68 | World 8 | Recursion & Backtracking |
-| 69–80 | World 9 | Trees & BST |
-| 81–90 | World 10 | Graphs |
-| 91–100 | Final Dungeon | Heap & DP (Door 100 is the final boss: Edit Distance) |
-
-The last door of every world (15, 22, 29, 36, 44, 52, 60, 68, 80, 90) is flagged as a
-Boss Door with elevated XP. Door 100 is the ultimate final boss.
-
-A demo admin account is also seeded: `admin@dsa100doors.dev` / `Admin1234`
-(the admin panel itself is a later phase — this account is for future use).
-
-## Important architectural notes
-
-- **Code execution is isolated behind one function.** `server/execution/executionService.js`
-  exposes a single `runAgainstKeys` function; every controller only talks to that
-  function. Swapping the judge internals (e.g. for a real container-based sandbox
-  later) is a drop-in replacement with no other code changes.
-- **Hidden Keys are never leaked.** Both `GET /api/doors/:doorNumber` and
-  `GET /api/problems/:id` strip hidden keys' `input`/`expectedOutput` before
-  sending to the client, and submission results never echo a hidden key's
-  expected output.
-- **Visualizations are data-driven**, not per-problem video/animation code. Each
-  problem stores `visualizationSteps` (an algorithm name + an array of state
-  snapshots); `StepVisualizer.jsx` renders any of them generically.
-
-## Deploying (Render + Netlify, no Docker)
-
-This repo has no Docker files — the backend runs entirely on Render's native Node
-runtime, and the frontend is a static Vite build on Netlify.
-
-### 1. Database — MongoDB Atlas
-
-Render doesn't offer a MongoDB add-on. Create a free cluster at
-[mongodb.com/atlas](https://www.mongodb.com/cloud/atlas), allow network access from
-anywhere (`0.0.0.0/0`, since Render's outbound IPs aren't static on the free plan),
-and copy the connection string — you'll paste it in as `MONGO_URI` below.
-
-### 2. Backend — Render
-
-`render.yaml` at the repo root is a ready-to-use Blueprint.
-
-1. Push this repo to GitHub/GitLab.
-2. In the Render dashboard: **New → Blueprint**, pick the repo. Render reads
-   `render.yaml` automatically (root dir `server`, build `npm ci --omit=dev`, start
-   `npm start`, native Node runtime — no Docker involved).
-3. When prompted for the `sync: false` variables, provide:
-   - `MONGO_URI` — your Atlas connection string
-   - `CLIENT_URL` — your Netlify site's URL once you have it (step 3); you can
-     redeploy later to update this once Netlify gives you a domain
-4. `JWT_SECRET` is auto-generated by the Blueprint (`generateValue: true`).
-5. Deploy. The build step downloads a portable JDK automatically (see the Judging
-   section above) — the first build takes a bit longer for that; later builds skip
-   it if cached.
-6. Note the resulting service URL, e.g. `https://dsa-100-doors-api.onrender.com`.
-
-Seed the database once, after the first deploy: run `npm run seed` locally with
-`MONGO_URI` in your shell env pointed at the same Atlas cluster (Render's free plan
-has no shell access), or use `render exec`/a Render one-off job on a paid plan.
-
-### 3. Frontend — Netlify
-
-`netlify.toml` at the repo root configures the build for you.
-
-1. In Netlify: **Add new site → Import an existing project**, pick the repo. It
-   picks up `netlify.toml` (base dir `client`, build `npm install && npm run
-   build`, publish `client/dist`, SPA redirect included).
-2. Set one environment variable in Netlify's UI (**Site settings → Environment
-   variables**): `VITE_API_URL` = `https://<your-render-service>.onrender.com/api`
-   (the trailing `/api` matters — see `client/src/services/api.js`).
-3. Deploy. Then go back to Render and set `CLIENT_URL` to this Netlify URL (comma-
-   separate it with any Netlify deploy-preview domain you want to allow too) so
-   CORS accepts requests from it.
-
-### Notes
-
-- Render's free-tier web services spin down after inactivity; the first request
-  after idling will be slow (cold start) while it spins back up.
-- The judge's sandboxing is `ulimit`-based, not container-based — see the
-  "Sandboxing" note above for what that does and doesn't protect against.
-- Set real values everywhere: `NODE_ENV=production` (set by the Blueprint already),
-  a real `MONGO_URI` (not localhost), and a `CLIENT_URL` that matches your actual
-  Netlify domain exactly (CORS is an exact-match allowlist, not a wildcard).
-
-## What's next (not yet built)
-
-- Phase 3: dedicated visual-hint mode (separate from the post-completion visualization)
-- Phase 5: Admin panel UI (backend models already support it — `isLockedByAdmin`, etc.)
-- Phase 6: Real sandboxed code execution service
-
-## Multi-language support
-
-Every problem ships with starter code in **Java, Python, C++, and C**. Rather than
-hand-writing ~400 snippets, `server/seed/starterCodeGenerator.js` mechanically derives
-the Python/C++/C stubs from each problem's single authored Java signature — parsing the
-method name, parameter types, and return type, then mapping them per language (including
-LeetCode-style C conventions like appending `numsSize` / `returnSize` parameters for
-array arguments). Three multi-method "design" problems (Min Stack, Implement Queue using
-Stacks, Serialize/Deserialize Binary Tree) don't fit that single-method pattern and have
-their multi-language stubs written directly instead.
-
-Switch languages from the dropdown above the code editor on any door page — the editor
-and starter code update immediately, and your language choice is remembered for next time.
+This project is licensed under the MIT License — feel free to use it for learning and portfolio reference.

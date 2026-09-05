@@ -6,24 +6,27 @@ const apiLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: { success: false, message: 'Too many requests, please try again later.' },
 });
 
 // Stricter limiter for auth endpoints to slow brute-force attempts
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 25,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: { success: false, message: 'Too many auth attempts, please try again later.' },
 });
 
 // Code execution is expensive; limit separately and more tightly
 const executionLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 15,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
   message: { success: false, message: 'Slow down — too many code runs. Try again shortly.' },
 });
 
