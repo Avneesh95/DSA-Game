@@ -1,0 +1,36 @@
+# Render Blueprint — deploys the backend API only (Node native runtime,
+# no Docker). Push this file to your repo root, then in Render:
+#   New -> Blueprint -> pick this repo -> it reads this file automatically.
+#
+# The frontend (client/) is NOT deployed here — deploy that to Netlify
+# separately (see netlify.toml at the repo root and the README).
+#
+# MongoDB is NOT provisioned here either — Render doesn't offer a MongoDB
+# add-on (only Postgres/Key Value). Use a free MongoDB Atlas cluster and
+# paste its connection string in as MONGO_URI below when prompted.
+
+services:
+  - type: web
+    name: dsa-100-doors-api
+    runtime: node
+    rootDir: server
+    plan: free
+    region: oregon
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGO_URI
+        sync: false # paste your MongoDB Atlas connection string when prompted
+      - key: CLIENT_URL
+        sync: false # your Netlify site URL, e.g. https://your-app.netlify.app
+                     # (comma-separate multiple origins if needed)

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Env files — never commit real secrets, only .env.example
+.env
+.env.local
+.env.*.local
+
+# Build output
+client/dist/
+client/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS/editor cruft
+.DS_Store
+.vscode/
+.idea/
+
+# Judge scratch dirs (should never exist outside os.tmpdir(), but just in case)
+server/execution/sandbox/tmp/
+
+# Portable JDK downloaded by server/scripts/install-jdk.sh — never commit,
+# Render's build re-downloads it (and re-uses it across deploys via its
+# persistent build cache)
+server/.jdk/

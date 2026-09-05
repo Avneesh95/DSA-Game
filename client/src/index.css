@@ -1,0 +1,401 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE — Apple-Inspired Dark Mode (Pure Black + Orange)
+═══════════════════════════════════════════════════════════════ */
+@layer base {
+  body {
+    @apply bg-dungeon-radial text-slate-100 min-h-screen antialiased;
+    background-attachment: fixed;
+    font-feature-settings: 'ss01', 'ss02', 'cv01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  /* ── LIGHT MODE body ── */
+  html.light body {
+    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    background-attachment: fixed;
+    color: #1d1d1f;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENTS
+═══════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ── door-panel (Apple Card) ── */
+  .door-panel {
+    @apply relative rounded-2xl border border-dungeon-600/50 bg-dungeon-800/80
+           backdrop-blur-xl p-5 transition-all duration-300;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05) inset,
+                0 2px 20px rgba(0,0,0,0.4);
+  }
+
+  html.light .door-panel {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(0,0,0,0.08) !important;
+    color: #1d1d1f !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.04) !important;
+    backdrop-filter: blur(20px) saturate(1.4);
+  }
+
+  /* ── btn-primary (Apple Orange CTA) ── */
+  .btn-primary {
+    @apply px-5 py-2.5 rounded-xl bg-glow-purple hover:brightness-110
+           text-white font-semibold transition-all;
+    box-shadow: 0 2px 12px rgba(255, 149, 0, 0.35);
+  }
+
+  html.light .btn-primary {
+    background: #ff9500 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 12px rgba(255, 149, 0, 0.3) !important;
+  }
+  html.light .btn-primary:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 4px 18px rgba(255, 149, 0, 0.4) !important;
+    transform: translateY(-1px);
+  }
+
+  /* ── btn-secondary ── */
+  .btn-secondary {
+    @apply px-5 py-2.5 rounded-xl border border-dungeon-600 bg-dungeon-700/60
+           hover:bg-dungeon-700 text-slate-100 font-medium transition-all;
+  }
+
+  html.light .btn-secondary {
+    border-color: rgba(0,0,0,0.12) !important;
+    background: rgba(0,0,0,0.04) !important;
+    color: #1d1d1f !important;
+  }
+  html.light .btn-secondary:hover {
+    background: rgba(0,0,0,0.08) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE — NAVBAR (Apple-style frosted glass)
+═══════════════════════════════════════════════════════════════ */
+header {
+  backdrop-filter: blur(20px) saturate(1.8) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — NAVBAR
+═══════════════════════════════════════════════════════════════ */
+html.light header {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-bottom-color: rgba(0,0,0,0.1) !important;
+  box-shadow: 0 0.5px 0 0 rgba(0,0,0,0.1) !important;
+  backdrop-filter: blur(20px) saturate(1.8) !important;
+  color: #1d1d1f !important;
+}
+
+html.light header a,
+html.light header span {
+  color: inherit;
+}
+
+html.light header .bg-dungeon-800\/80,
+html.light header .bg-dungeon-800 {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0,0,0,0.1) !important;
+}
+
+html.light header button {
+  background: rgba(0,0,0,0.04) !important;
+  border-color: rgba(0,0,0,0.1) !important;
+  color: #1d1d1f !important;
+}
+html.light header button:hover {
+  background: rgba(0,0,0,0.08) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — FOOTER
+═══════════════════════════════════════════════════════════════ */
+html.light footer {
+  background: rgba(250, 250, 250, 0.95) !important;
+  border-top-color: rgba(0,0,0,0.08) !important;
+  color: #6e6e73 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — FORM INPUTS
+═══════════════════════════════════════════════════════════════ */
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color: #1d1d1f !important;
+  border-radius: 10px !important;
+}
+html.light input:focus,
+html.light select:focus,
+html.light textarea:focus {
+  border-color: #ff9500 !important;
+  box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15) !important;
+  outline: none !important;
+}
+html.light input::placeholder {
+  color: #86868b !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — TEXT OVERRIDES
+═══════════════════════════════════════════════════════════════ */
+html.light .text-slate-100,
+html.light .text-slate-200,
+html.light .text-slate-300 {
+  color: #1d1d1f !important;
+}
+
+html.light .text-slate-400 {
+  color: #6e6e73 !important;
+}
+
+html.light .text-slate-500 {
+  color: #86868b !important;
+}
+
+/* ── Apple accent colours in light mode ── */
+html.light .text-glow-gold {
+  color: #bf5f00 !important;
+}
+
+html.light .text-glow-purple {
+  color: #e07800 !important;
+}
+
+html.light .text-glow-cyan {
+  color: #1d1d1f !important;
+}
+
+html.light .text-glow-emerald {
+  color: #248a3d !important;
+}
+
+html.light .text-glow-rose {
+  color: #d70015 !important;
+}
+
+/* ── Border overrides ── */
+html.light .border-glow-purple\/40,
+html.light .border-glow-purple\/50,
+html.light .border-glow-purple\/60,
+html.light .border-glow-purple\/70 {
+  border-color: rgba(255, 149, 0, 0.3) !important;
+}
+
+html.light .border-glow-gold\/40,
+html.light .border-glow-gold\/50 {
+  border-color: rgba(255, 204, 0, 0.3) !important;
+}
+
+html.light .border-glow-cyan {
+  border-color: rgba(0,0,0,0.1) !important;
+}
+
+html.light .border-glow-emerald\/70 {
+  border-color: rgba(36, 138, 61, 0.4) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — DUNGEON BACKGROUNDS → Apple White/Gray
+═══════════════════════════════════════════════════════════════ */
+html.light .bg-dungeon-950,
+html.light .bg-dungeon-950\/70,
+html.light .bg-dungeon-950\/60 {
+  background-color: #ffffff !important;
+}
+
+html.light .bg-dungeon-900,
+html.light .bg-dungeon-900\/80,
+html.light .bg-dungeon-900\/70,
+html.light .bg-dungeon-900\/60,
+html.light .bg-dungeon-900\/50,
+html.light .bg-dungeon-900\/40 {
+  background-color: #fafafa !important;
+}
+
+html.light .bg-dungeon-800,
+html.light .bg-dungeon-800\/80,
+html.light .bg-dungeon-800\/90,
+html.light .bg-dungeon-800\/70,
+html.light .bg-dungeon-800\/60 {
+  background-color: #f5f5f7 !important;
+}
+
+html.light .bg-dungeon-700 {
+  background-color: #e8e8ed !important;
+  color: #1d1d1f !important;
+}
+
+html.light .bg-dungeon-700\/60 {
+  background-color: rgba(232, 232, 237, 0.6) !important;
+}
+
+/* ── Border colours ── */
+html.light .border-dungeon-600,
+html.light .border-dungeon-600\/80,
+html.light .border-dungeon-700,
+html.light .border-dungeon-700\/60,
+html.light .border-dungeon-700\/80,
+html.light .border-dungeon-800 {
+  border-color: rgba(0,0,0,0.1) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — EDITOR PANEL (DoorPage)
+═══════════════════════════════════════════════════════════════ */
+html.light .bg-\[\#0d1117\] {
+  background-color: #ffffff !important;
+  border-color: rgba(0,0,0,0.1) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04) !important;
+}
+
+html.light .bg-\[\#161b22\] {
+  background-color: #fafafa !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+html.light .bg-\[\#1c2128\] {
+  background-color: #f5f5f7 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — GLOW BACKGROUNDS
+═══════════════════════════════════════════════════════════════ */
+html.light .bg-glow-purple\/10,
+html.light .bg-glow-purple\/20,
+html.light .bg-glow-purple\/15 {
+  background-color: rgba(255, 149, 0, 0.08) !important;
+}
+
+html.light .bg-glow-gold\/10,
+html.light .bg-glow-gold\/20 {
+  background-color: rgba(255, 204, 0, 0.08) !important;
+}
+
+html.light .bg-glow-cyan\/10,
+html.light .bg-glow-cyan\/20 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ── Run error console ── */
+html.light .bg-rose-950\/60 {
+  background-color: rgba(255, 238, 238, 0.95) !important;
+  border-color: rgba(215, 0, 21, 0.2) !important;
+}
+
+html.light .text-rose-300 {
+  color: #d70015 !important;
+}
+html.light .text-rose-400 {
+  color: #ff3b30 !important;
+}
+html.light .border-rose-500\/40 {
+  border-color: rgba(255, 59, 48, 0.2) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — KEYS PANEL & BADGES
+═══════════════════════════════════════════════════════════════ */
+html.light .bg-emerald-500\/20,
+html.light .bg-emerald-500\/25 {
+  background-color: rgba(36, 138, 61, 0.08) !important;
+}
+html.light .border-emerald-400 {
+  border-color: rgba(36, 138, 61, 0.4) !important;
+}
+html.light .text-emerald-300,
+html.light .text-emerald-400 {
+  color: #248a3d !important;
+}
+
+html.light .bg-rose-500\/20,
+html.light .bg-rose-500\/25 {
+  background-color: rgba(215, 0, 21, 0.06) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — VISUALIZER PANELS
+═══════════════════════════════════════════════════════════════ */
+html.light .bg-dungeon-900\/40.rounded-xl {
+  background: rgba(245, 245, 247, 0.8) !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — LOGIN / REGISTER PAGES
+═══════════════════════════════════════════════════════════════ */
+html.light .min-h-screen.flex {
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CODE LINE HIGHLIGHT DECORATION (Monaco Editor)
+═══════════════════════════════════════════════════════════════ */
+.myLineDecoration {
+  background: transparent !important;
+  border: none !important;
+}
+
+html.light .myLineDecoration {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR — Apple-style thin
+═══════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.12);
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.22);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL SMOOTH TRANSITIONS
+═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Reset transitions for animations */
+.animate-spin, .animate-pulse, [class*='animate-'] {
+  transition: none !important;
+}
+
+/* Selection colour */
+::selection {
+  background: rgba(255, 149, 0, 0.3);
+  color: inherit;
+}
+html.light ::selection {
+  background: rgba(255, 149, 0, 0.2);
+}

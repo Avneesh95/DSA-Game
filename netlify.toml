@@ -1,0 +1,22 @@
+# Netlify config for the client/ (React + Vite) app.
+# If your Netlify site's "Base directory" isn't set in the UI, this file
+# tells Netlify everything it needs: where to build from, what to run,
+# and what to publish.
+
+[build]
+  base = "client"
+  command = "npm install && npm run build"
+  publish = "client/dist"
+
+# VITE_API_URL is read at BUILD time (see client/src/services/api.js) and
+# must point at your deployed backend, e.g.:
+#   https://dsa-100-doors-api.onrender.com/api
+# Set it in the Netlify UI: Site settings -> Environment variables.
+# (Not set here since it's specific to your Render deployment.)
+
+# SPA fallback: client-side routes (e.g. /doors/12) must resolve to
+# index.html instead of 404ing on a hard refresh or direct link.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
