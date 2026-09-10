@@ -1,6 +1,6 @@
-# Render Blueprint — deploys the backend API only (Node native runtime,
-# no Docker). Push this file to your repo root, then in Render:
-#   New -> Blueprint -> pick this repo -> it reads this file automatically.
+# Render Blueprint — deploys the backend API via Docker.
+# The Dockerfile installs Node 20, g++, gcc, JDK, and Python3
+# so all four languages (Java, Python, C++, C) work for code execution.
 #
 # The frontend (client/) is NOT deployed here — deploy that to Netlify
 # separately (see netlify.toml at the repo root and the README).
@@ -12,12 +12,10 @@
 services:
   - type: web
     name: dsa-game
-    runtime: node
-    rootDir: server
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     plan: free
     region: oregon
-    buildCommand: bash scripts/install-jdk.sh && npm ci --omit=dev
-    startCommand: npm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
