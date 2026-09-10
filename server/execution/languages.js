@@ -64,9 +64,29 @@ async function prepare(language, dir, harnessSource) {
     fs.writeFileSync(file, harnessSource);
     fs.copyFileSync(VENDOR_JSON_HPP, path.join(dir, 'json.hpp'));
     const outFile = path.join(dir, isWin ? 'a.exe' : 'a.out');
-    const compile = await runProcess('g++', ['-std=c++17', '-O0', '-o', outFile, file], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
-    if (compile.code !== 0) {
-      return { compileError: compile.stderr || 'g++ compilation failed', run: null };
+
+    // Try to find g++ - on Render or restricted environments it may be at different paths
+    const gppCandidates = isWin
+      ? ['g++']
+      : ['g++', '/usr/bin/g++', '/usr/local/bin/g++'];
+    
+    let compileResult = null;
+    let gppCmd = null;
+    for (const candidate of gppCandidates) {
+      compileResult = await runProcess(candidate, ['-std=c++17', '-O0', '-o', outFile, file], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
+      if (compileResult.code !== undefined) {
+        gppCmd = candidate;
+        break;
+      }
+    }
+
+    if (!compileResult || compileResult.code !== 0) {
+      const errDetail = compileResult?.stderr || '';
+      // If g++ is simply not found, return clear message
+      if (!errDetail || errDetail.includes('not found') || errDetail.includes('No such file') || compileResult?.code === -1) {
+        return { compileError: 'C++ compiler (g++) is not available on this server. Please use Java or Python.', run: null };
+      }
+      return { compileError: errDetail || 'g++ compilation failed', run: null };
     }
     return {
       compileError: null,

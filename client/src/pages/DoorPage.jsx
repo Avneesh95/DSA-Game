@@ -6,7 +6,7 @@ import {
   Play, Send, RefreshCw, Lightbulb, Loader2, Cpu,
   Sparkles, Maximize2, Minimize2, X, Terminal,
   CheckCircle, XCircle, FileCode2, Clock,
-  Home,
+  Home, Wand2,
 } from 'lucide-react';
 
 import MainLayout from '../layouts/MainLayout';
@@ -136,6 +136,11 @@ export default function DoorPage() {
     editor.onDidChangeModelContent(() => {
       setLineCount(editor.getModel()?.getLineCount() || 0);
     });
+  }, []);
+
+  const handleFormat = useCallback(() => {
+    if (!editorRef.current) return;
+    editorRef.current.getAction('editor.action.formatDocument')?.run();
   }, []);
 
   const handleLineChange = useCallback((lineNum) => {
@@ -413,6 +418,17 @@ export default function DoorPage() {
                   title="Reset to starter code"
                 >
                   <RefreshCw size={11} /> Reset
+                </button>
+                <button
+                  onClick={handleFormat}
+                  className={`text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all ${
+                    isLight
+                      ? 'text-[#6e6e73] hover:text-[#007aff] hover:bg-black/[0.04]'
+                      : 'text-white/50 hover:text-[#64d2ff] hover:bg-white/[0.06]'
+                  }`}
+                  title="Format code (auto-indent)"
+                >
+                  <Wand2 size={11} /> Format
                 </button>
                 <button
                   onClick={() => setIsFullscreen((f) => !f)}

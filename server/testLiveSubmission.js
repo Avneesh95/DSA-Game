@@ -72,10 +72,8 @@ async function testLive() {
     code: javaCode,
     language: 'java'
   }, token);
-  console.log(`Java Status: ${javaSub.body?.status}, Keys: ${javaSub.body?.keysCollectedCount}/${javaSub.body?.totalKeys}, DoorUnlocked: ${javaSub.body?.doorUnlocked}`);
-  if (javaSub.body?.status !== 'accepted') {
-    console.log('Java key results:', javaSub.body?.keyResults);
-  }
+  console.log('Java Response Status:', javaSub.status);
+  console.log('Java Response Body:', JSON.stringify(javaSub.body || javaSub.raw));
 
   // Test C++
   const cppCode = `class Solution {\npublic:\n    int findMaximum(vector<int>& nums) {\n        int mx = nums[0];\n        for (int x : nums) if (x > mx) mx = x;\n        return mx;\n    }\n};\n`;
@@ -85,10 +83,8 @@ async function testLive() {
     code: cppCode,
     language: 'cpp'
   }, token);
-  console.log(`C++ Status: ${cppSub.body?.status}, Keys: ${cppSub.body?.keysCollectedCount}/${cppSub.body?.totalKeys}, DoorUnlocked: ${cppSub.body?.doorUnlocked}`);
-  if (cppSub.body?.status !== 'accepted') {
-    console.log('C++ key results:', cppSub.body?.keyResults);
-  }
+  console.log('C++ Response Status:', cppSub.status);
+  console.log('C++ Response Body:', JSON.stringify(cppSub.body || cppSub.raw));
 }
 
 testLive().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); });
