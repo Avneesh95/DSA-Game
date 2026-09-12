@@ -8,15 +8,16 @@ const path = require('path');
 
 const PORT = process.env.PORT || 5000;
 
-// Ensure JDK exists on Linux cloud instances (e.g. Render)
+// Ensure portable JDK & C/C++ compiler exist on Linux cloud instances (e.g. Render)
 const jdkJavac = path.join(__dirname, '.jdk', 'bin', 'javac');
-if (process.platform === 'linux' && !fs.existsSync(jdkJavac)) {
+const zigBin = path.join(__dirname, '.compilers', 'zig');
+if (process.platform === 'linux' && (!fs.existsSync(jdkJavac) || !fs.existsSync(zigBin))) {
   try {
-    console.log('[JDK] Portable JDK not detected on Linux. Running scripts/install-jdk.sh...');
-    execSync('bash scripts/install-jdk.sh', { cwd: __dirname, stdio: 'inherit' });
-    console.log('[JDK] Portable JDK ready.');
+    console.log('[COMPILERS] Checking/installing portable toolchains (JDK, C/C++)...');
+    execSync('bash scripts/install-compilers.sh', { cwd: __dirname, stdio: 'inherit' });
+    console.log('[COMPILERS] Portable toolchains ready.');
   } catch (err) {
-    console.warn('[JDK] Note: install-jdk.sh returned:', err.message);
+    console.warn('[COMPILERS] Note: install-compilers.sh returned:', err.message);
   }
 }
 

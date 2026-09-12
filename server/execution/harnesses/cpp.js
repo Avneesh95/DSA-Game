@@ -143,7 +143,28 @@ function buildCppHarness(userCode, classified) {
     : `    auto _result = sol.${methodName}(${callArgs.join(', ')});\n    json _out = ${buildResultToJsonExpr(returnType, '_result')};`;
 
   return `// Auto-generated judge harness. Do not edit.
+#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+#include <stack>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <cmath>
+#include <climits>
+#include <numeric>
+#include <sstream>
+#include <memory>
+#include <utility>
+#include <tuple>
+#include <functional>
+#include <bitset>
+#if __has_include(<bits/stdc++.h>)
 #include <bits/stdc++.h>
+#endif
 #include "json.hpp"
 using namespace std;
 using json = nlohmann::json;
