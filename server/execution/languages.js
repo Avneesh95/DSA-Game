@@ -15,9 +15,15 @@ const BUNDLED_COMPILERS_DIR = path.join(__dirname, '..', '.compilers');
 
 const BUNDLED_GPP = path.join(BUNDLED_COMPILERS_DIR, 'bin', 'g++' + exeSuffix);
 const BUNDLED_MUSL_GPP = path.join(BUNDLED_COMPILERS_DIR, 'bin', 'x86_64-linux-musl-g++' + exeSuffix);
+const BUNDLED_MUSL_CPP = path.join(BUNDLED_COMPILERS_DIR, 'bin', 'x86_64-linux-musl-c++' + exeSuffix);
 const BUNDLED_GCC = path.join(BUNDLED_COMPILERS_DIR, 'bin', 'gcc' + exeSuffix);
 const BUNDLED_MUSL_GCC = path.join(BUNDLED_COMPILERS_DIR, 'bin', 'x86_64-linux-musl-gcc' + exeSuffix);
 const BUNDLED_ZIG_BIN = path.join(BUNDLED_COMPILERS_DIR, 'zig' + exeSuffix);
+
+// Automatically include compiler bin directories in PATH
+const compilerBinDir = path.join(BUNDLED_COMPILERS_DIR, 'bin');
+const jdkBinDir = path.join(BUNDLED_JDK_DIR, 'bin');
+process.env.PATH = `${compilerBinDir}:${BUNDLED_COMPILERS_DIR}:${jdkBinDir}:${process.env.PATH || ''}`;
 
 function getJavacCmd() {
   const bundled = path.join(BUNDLED_JDK_DIR, 'bin', 'javac' + exeSuffix);
@@ -90,7 +96,11 @@ async function prepare(language, dir, harnessSource) {
         if (fs.existsSync(BUNDLED_MUSL_GPP)) {
           list.push({ cmd: BUNDLED_MUSL_GPP, args: ['-std=c++17', '-O0', '-o', outFile, file] });
         }
+        if (fs.existsSync(BUNDLED_MUSL_CPP)) {
+          list.push({ cmd: BUNDLED_MUSL_CPP, args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        }
         list.push({ cmd: 'g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        list.push({ cmd: 'x86_64-linux-musl-g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
         list.push({ cmd: '/usr/bin/g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
         list.push({ cmd: '/usr/local/bin/g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
         list.push({ cmd: 'clang++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
