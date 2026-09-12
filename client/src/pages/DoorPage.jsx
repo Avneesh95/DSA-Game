@@ -18,6 +18,7 @@ import DoorUnlockOverlay from '../components/DoorUnlockOverlay';
 import LanguageSelector from '../components/LanguageSelector';
 import DungeonLoader from '../components/DungeonLoader';
 import { doorApi, submissionApi, progressApi } from '../services/api';
+import { formatCode } from '../utils/algorithmSteps';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
 
@@ -142,8 +143,47 @@ export default function DoorPage() {
 
   const handleFormat = useCallback(() => {
     if (!editorRef.current) return;
-    editorRef.current.getAction('editor.action.formatDocument')?.run();
-  }, []);
+    const editor = editorRef.current;
+    const model = editor.getModel();
+    if (!model) return;
+
+    try {
+      const currentVal = editor.getValue();
+      const formatted = formatCode(currentVal, language);
+      if (formatted && formatted !== currentVal) {
+        editor.executeEdits('codeFormatter', [{
+          range: model.getFullModelRange(),
+          text: formatted,
+        }]);
+        setCode(formatted);
+      }
+    } catch (_) {
+      // Fallback to Monaco's built-in action if available
+      editor.getAction('editor.action.formatDocument')?.run();
+    }
+  }, [language]);
+
+  const handleDebug = async () => {
+    if (!doorData) return;
+    setIsRunning(true);
+    setRunningAction('debug');
+    setRunResult(null);
+    setRunError(null);
+    try {
+      const { data } = await submissionApi.run({ problemId: doorData.problem._id, code, language });
+      setRunResult({ ...data, mode: 'debug' });
+      const firstErr = data?.keyResults?.find((k) => k.error || k.stderr);
+      const compileErr = data?.compileError || (data?.status === 'compile_error' ? (firstErr?.error || firstErr?.stderr || 'Compilation error') : null);
+      if (compileErr || firstErr?.error || firstErr?.stderr) {
+        setRunError(compileErr || firstErr?.error || firstErr?.stderr || null);
+      }
+    } catch (err) {
+      setRunError(err.response?.data?.message || err.message || 'Debug execution failed');
+    } finally {
+      setIsRunning(false);
+      setRunningAction(null);
+    }
+  };
 
   const handleLineChange = useCallback((lineNum) => {
     if (!editorRef.current) return;
@@ -384,6 +424,23 @@ export default function DoorPage() {
               </div>
 
               <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleDebug}
+                  disabled={isRunning}
+                  className={`text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 font-semibold transition-all border ${
+                    isRunning && runningAction === 'debug'
+                      ? 'opacity-70 cursor-wait'
+                      : ''
+                  } ${
+                    isLight
+                      ? 'bg-sky-500/10 border-sky-500/30 text-sky-700 hover:bg-sky-500/20'
+                      : 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/25'
+                  }`}
+                  title="Run code with active Debug Console and output inspection"
+                >
+                  <Bug size={12} className={isRunning && runningAction === 'debug' ? 'animate-spin text-sky-500' : 'text-sky-500 dark:text-cyan-400'} />
+                  <span>{isRunning && runningAction === 'debug' ? 'Debugging...' : 'Debug'}</span>
+                </button>
                 {problem.referenceSolution?.code && (
                   <button
                     onClick={handleLoadSolution}
@@ -634,6 +691,7 @@ export default function DoorPage() {
           <TestResultsPanel
             keyResults={runResult?.keyResults}
             compileError={runError}
+            mode={runResult?.mode || (runningAction === 'debug' ? 'debug' : 'run')}
             showDebug={showDebug}
             onToggleDebug={() => setShowDebug((v) => !v)}
           />

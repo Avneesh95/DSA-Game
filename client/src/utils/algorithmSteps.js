@@ -178,3 +178,94 @@ export function getAlgorithmGuide(problem) {
     },
   };
 }
+
+/**
+ * Universal Multi-Language Code Formatter
+ * Beautifies and normalizes indentation for C++, Java, Python, C, and JavaScript.
+ */
+export function formatCode(sourceCode, language) {
+  if (!sourceCode || typeof sourceCode !== 'string') return sourceCode;
+  
+  const lang = (language || '').toLowerCase();
+  const lines = sourceCode.split('\n');
+  
+  if (lang === 'python') {
+    return formatPython(lines);
+  }
+  
+  return formatBraceLanguage(lines);
+}
+
+function formatBraceLanguage(lines) {
+  let indentLevel = 0;
+  const indentStr = '    ';
+  const formatted = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    let line = rawLine.trim();
+    
+    if (!line) {
+      if (formatted.length > 0 && formatted[formatted.length - 1] !== '') {
+        formatted.push('');
+      }
+      continue;
+    }
+    
+    const openBraces = (line.match(/\{/g) || []).length;
+    const closeBraces = (line.match(/\}/g) || []).length;
+    
+    const startsWithClose = /^(\}|\]|\))/.test(line);
+    if (startsWithClose) {
+      indentLevel = Math.max(0, indentLevel - 1);
+    }
+    
+    let lineIndent = indentLevel;
+    if (/^(public|private|protected)\s*:/.test(line)) {
+      lineIndent = Math.max(0, indentLevel - 1);
+    } else if (/^(case\s+[^:]+|default)\s*:/.test(line)) {
+      lineIndent = Math.max(0, indentLevel - 1);
+    }
+    
+    formatted.push(indentStr.repeat(lineIndent) + line);
+    
+    if (!startsWithClose) {
+      indentLevel = Math.max(0, indentLevel + openBraces - closeBraces);
+    } else {
+      indentLevel = Math.max(0, indentLevel + openBraces - (closeBraces - 1));
+    }
+  }
+  
+  return formatted.join('\n').trim() + '\n';
+}
+
+function formatPython(lines) {
+  let indentLevel = 0;
+  const indentStr = '    ';
+  const formatted = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    let line = rawLine.trim();
+    
+    if (!line) {
+      if (formatted.length > 0 && formatted[formatted.length - 1] !== '') {
+        formatted.push('');
+      }
+      continue;
+    }
+    
+    if (/^(else|elif\s.*|except(\s.*)?|finally)\s*:/.test(line)) {
+      indentLevel = Math.max(0, indentLevel - 1);
+    }
+    
+    formatted.push(indentStr.repeat(indentLevel) + line);
+    
+    if (line.endsWith(':')) {
+      indentLevel++;
+    }
+  }
+  
+  return formatted.join('\n').trim() + '\n';
+}
+

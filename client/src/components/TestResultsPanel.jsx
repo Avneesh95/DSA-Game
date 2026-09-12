@@ -223,10 +223,16 @@ function TestcaseDiagram({ inputStr, isLight }) {
 /**
  * LeetCode-style Test Results & Debugger Panel
  */
-export default function TestResultsPanel({ keyResults, compileError, showDebug, onToggleDebug }) {
+export default function TestResultsPanel({ keyResults, compileError, showDebug, onToggleDebug, mode = 'run' }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [activeView, setActiveView] = useState('testcases'); // 'testcases' | 'console'
+  const [activeView, setActiveView] = useState(() => (mode === 'debug' || showDebug ? 'console' : 'testcases'));
   const isLight = useThemeStore((s) => s.theme) === 'light';
+
+  useEffect(() => {
+    if (mode === 'debug' || showDebug) {
+      setActiveView('console');
+    }
+  }, [mode, showDebug]);
 
   const hasResults = Array.isArray(keyResults) && keyResults.length > 0;
   const hasError = Boolean(compileError);

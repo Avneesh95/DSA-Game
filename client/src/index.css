@@ -15,11 +15,11 @@
     transition: background-color 0.4s ease, color 0.4s ease;
   }
 
-  /* ── LIGHT MODE body ── */
+  /* ── LIGHT MODE body (Crisp White + Ethereal Light Blue) ── */
   html.light body {
-    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
-    background-attachment: fixed;
-    color: #1d1d1f;
+    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 45%, #e0f2fe 100%) !important;
+    background-attachment: fixed !important;
+    color: #0f172a !important;
   }
 }
 
@@ -28,7 +28,7 @@
 ═══════════════════════════════════════════════════════════════ */
 @layer components {
 
-  /* ── door-panel (Apple Card) ── */
+  /* ── door-panel (Apple Light Blue & Crisp White Card) ── */
   .door-panel {
     @apply relative rounded-2xl border border-dungeon-600/50 bg-dungeon-800/80
            backdrop-blur-xl p-5 transition-all duration-300;
@@ -37,11 +37,16 @@
   }
 
   html.light .door-panel {
-    background: rgba(255, 255, 255, 0.92) !important;
-    border-color: rgba(0,0,0,0.08) !important;
-    color: #1d1d1f !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.04) !important;
-    backdrop-filter: blur(20px) saturate(1.4);
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-color: rgba(14, 165, 233, 0.16) !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.05), 0 10px 32px -4px rgba(2, 132, 199, 0.08) !important;
+    backdrop-filter: blur(20px) saturate(1.5);
+  }
+
+  html.light .door-panel:hover {
+    border-color: rgba(14, 165, 233, 0.35) !important;
+    box-shadow: 0 4px 20px -2px rgba(2, 132, 199, 0.12), 0 14px 40px -4px rgba(2, 132, 199, 0.12) !important;
   }
 
   /* ── btn-primary (Apple Orange CTA) ── */
@@ -397,5 +402,25 @@ html.light ::-webkit-scrollbar-thumb:hover {
   color: inherit;
 }
 html.light ::selection {
-  background: rgba(255, 149, 0, 0.2);
+  background: rgba(2, 132, 199, 0.2);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ITALIC TYPOGRAPHY & ELEGANT ACCENTS
+═══════════════════════════════════════════════════════════════ */
+.italic-accent,
+.complexity-note,
+.pro-tip-text,
+.quote-italic,
+.hint-italic {
+  font-style: italic !important;
+}
+
+/* Monaco code editor comments and docstrings in italic */
+.monaco-editor .mtk3,
+.monaco-editor .comment,
+.monaco-editor .token.comment {
+  font-style: italic !important;
+  opacity: 0.85;
+}
+
