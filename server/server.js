@@ -8,17 +8,11 @@ const path = require('path');
 
 const PORT = process.env.PORT || 5000;
 
+const { ensureCompilers } = require('./scripts/ensure-compilers');
+
 // Ensure portable JDK & C/C++ compiler exist on Linux cloud instances (e.g. Render)
-const jdkJavac = path.join(__dirname, '.jdk', 'bin', 'javac');
-const zigBin = path.join(__dirname, '.compilers', 'zig');
-if (process.platform === 'linux' && (!fs.existsSync(jdkJavac) || !fs.existsSync(zigBin))) {
-  try {
-    console.log('[COMPILERS] Checking/installing portable toolchains (JDK, C/C++)...');
-    execSync('bash scripts/install-compilers.sh', { cwd: __dirname, stdio: 'inherit' });
-    console.log('[COMPILERS] Portable toolchains ready.');
-  } catch (err) {
-    console.warn('[COMPILERS] Note: install-compilers.sh returned:', err.message);
-  }
+if (process.platform === 'linux') {
+  ensureCompilers().catch((err) => console.warn('[COMPILERS] Startup ensure warning:', err.message));
 }
 
 const start = async () => {
