@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execSync } = require('child_process');
 const { runProcess } = require('./runner');
+const { ensureCompilers } = require('../scripts/ensure-compilers');
 
 const VENDOR_JSON_HPP = path.join(__dirname, 'vendor', 'json.hpp');
 const COMPILE_TIMEOUT_MS = 25000;
@@ -48,7 +50,14 @@ async function prepare(language, dir, harnessSource) {
   if (language === 'java') {
     const file = path.join(dir, 'Main.java');
     fs.writeFileSync(file, harnessSource);
-    const javacCmd = getJavacCmd();
+    let javacCmd = getJavacCmd();
+
+    // If javac doesn't exist on Linux, try provisioning on-demand
+    if (!isWin && !fs.existsSync(javacCmd)) {
+      try { await ensureCompilers(); } catch (_) {}
+      javacCmd = getJavacCmd();
+    }
+
     const compile = await runProcess(javacCmd, ['-J-Xmx256m', '-encoding', 'UTF-8', 'Main.java'], { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
     if (compile.code !== 0) {
       return { compileError: compile.stderr || 'javac compilation failed. Please check your syntax or imports.', run: null };
@@ -66,32 +75,53 @@ async function prepare(language, dir, harnessSource) {
     fs.copyFileSync(VENDOR_JSON_HPP, path.join(dir, 'json.hpp'));
     const outFile = path.join(dir, isWin ? 'a.exe' : 'a.out');
 
-    // Candidate list of compilers in order of preference
-    const candidates = [];
-    if (isWin) {
-      candidates.push({ cmd: 'g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
-      candidates.push({ cmd: 'clang++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
-    } else {
-      if (fs.existsSync(BUNDLED_GPP)) {
-        candidates.push({ cmd: BUNDLED_GPP, args: ['-std=c++17', '-O0', '-o', outFile, file] });
+    const getCandidates = () => {
+      const list = [];
+      if (isWin) {
+        list.push({ cmd: 'g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        list.push({ cmd: 'clang++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
+      } else {
+        if (fs.existsSync(BUNDLED_ZIG_BIN)) {
+          list.push({ cmd: BUNDLED_ZIG_BIN, args: ['c++', '-std=c++17', '-O0', '-o', outFile, file] });
+        }
+        if (fs.existsSync(BUNDLED_GPP)) {
+          list.push({ cmd: BUNDLED_GPP, args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        }
+        if (fs.existsSync(BUNDLED_MUSL_GPP)) {
+          list.push({ cmd: BUNDLED_MUSL_GPP, args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        }
+        list.push({ cmd: 'g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        list.push({ cmd: '/usr/bin/g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        list.push({ cmd: '/usr/local/bin/g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
+        list.push({ cmd: 'clang++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
       }
-      if (fs.existsSync(BUNDLED_MUSL_GPP)) {
-        candidates.push({ cmd: BUNDLED_MUSL_GPP, args: ['-std=c++17', '-O0', '-o', outFile, file] });
-      }
-      candidates.push({ cmd: 'g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
-      candidates.push({ cmd: '/usr/bin/g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
-      candidates.push({ cmd: '/usr/local/bin/g++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
-      candidates.push({ cmd: 'clang++', args: ['-std=c++17', '-O0', '-o', outFile, file] });
-    }
-    if (fs.existsSync(BUNDLED_ZIG_BIN)) {
-      candidates.push({ cmd: BUNDLED_ZIG_BIN, args: ['c++', '-std=c++17', '-O0', '-o', outFile, file] });
-    }
+      return list;
+    };
 
+    let candidates = getCandidates();
     let compileResult = null;
+
     for (const cand of candidates) {
       compileResult = await runProcess(cand.cmd, cand.args, { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
       if (compileResult && compileResult.code !== -1) {
         break;
+      }
+    }
+
+    // If all candidates failed with ENOENT on Linux, provision compiler on-demand and retry
+    if ((!compileResult || compileResult.code === -1) && !isWin) {
+      console.log('[C++] No working C++ compiler found. Running on-demand toolchain provisioning...');
+      try {
+        await ensureCompilers();
+        candidates = getCandidates();
+        for (const cand of candidates) {
+          compileResult = await runProcess(cand.cmd, cand.args, { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
+          if (compileResult && compileResult.code !== -1) {
+            break;
+          }
+        }
+      } catch (provErr) {
+        console.warn('[C++] On-demand provisioning error:', provErr.message);
       }
     }
 
@@ -114,32 +144,50 @@ async function prepare(language, dir, harnessSource) {
     fs.writeFileSync(file, harnessSource);
     const outFile = path.join(dir, isWin ? 'a.exe' : 'a.out');
 
-    const candidates = [];
-    if (isWin) {
-      candidates.push({ cmd: 'gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-      candidates.push({ cmd: 'clang', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-    } else {
-      if (fs.existsSync(BUNDLED_GCC)) {
-        candidates.push({ cmd: BUNDLED_GCC, args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+    const getCandidates = () => {
+      const list = [];
+      if (isWin) {
+        list.push({ cmd: 'gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+        list.push({ cmd: 'clang', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+      } else {
+        if (fs.existsSync(BUNDLED_ZIG_BIN)) {
+          list.push({ cmd: BUNDLED_ZIG_BIN, args: ['cc', '-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+        }
+        if (fs.existsSync(BUNDLED_GCC)) {
+          list.push({ cmd: BUNDLED_GCC, args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+        }
+        if (fs.existsSync(BUNDLED_MUSL_GCC)) {
+          list.push({ cmd: BUNDLED_MUSL_GCC, args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+        }
+        list.push({ cmd: 'gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+        list.push({ cmd: '/usr/bin/gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+        list.push({ cmd: '/usr/local/bin/gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
+        list.push({ cmd: 'clang', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
       }
-      if (fs.existsSync(BUNDLED_MUSL_GCC)) {
-        candidates.push({ cmd: BUNDLED_MUSL_GCC, args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-      }
-      candidates.push({ cmd: 'gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-      candidates.push({ cmd: '/usr/bin/gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-      candidates.push({ cmd: '/usr/local/bin/gcc', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-      candidates.push({ cmd: 'clang', args: ['-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-    }
-    if (fs.existsSync(BUNDLED_ZIG_BIN)) {
-      candidates.push({ cmd: BUNDLED_ZIG_BIN, args: ['cc', '-std=gnu11', '-O0', '-o', outFile, file, '-lm'] });
-    }
+      return list;
+    };
 
+    let candidates = getCandidates();
     let compileResult = null;
+
     for (const cand of candidates) {
       compileResult = await runProcess(cand.cmd, cand.args, { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
       if (compileResult && compileResult.code !== -1) {
         break;
       }
+    }
+
+    if ((!compileResult || compileResult.code === -1) && !isWin) {
+      try {
+        await ensureCompilers();
+        candidates = getCandidates();
+        for (const cand of candidates) {
+          compileResult = await runProcess(cand.cmd, cand.args, { cwd: dir, timeoutMs: COMPILE_TIMEOUT_MS });
+          if (compileResult && compileResult.code !== -1) {
+            break;
+          }
+        }
+      } catch (_) {}
     }
 
     if (!compileResult || compileResult.code !== 0) {
