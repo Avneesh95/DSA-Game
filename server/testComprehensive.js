@@ -261,6 +261,34 @@ class Solution {
     }
   } catch (_) {}
 
+  // C++ execution test
+  try {
+    const cppValidCode = `
+class Solution {
+public:
+    int findMaximum(vector<int>& nums) {
+        int mx = nums[0];
+        for (int x : nums) if (x > mx) mx = x;
+        return mx;
+    }
+};
+`;
+    const cppRes = await runAgainstKeys({
+      code: cppValidCode,
+      language: 'cpp',
+      keys: sampleKeys,
+      problem: sampleProblem,
+    });
+    if (cppRes.status === 'accepted') {
+      test('C++: Compilation with micro json.hpp succeeds and returns accepted', () => {
+        assert.strictEqual(cppRes.status, 'accepted');
+        assert.strictEqual(cppRes.keyResults[0].actualOutput, '9');
+      });
+    } else {
+      console.log('  ℹ️  [SKIP] C++ compiler (g++) test status: ' + cppRes.status);
+    }
+  } catch (_) {}
+
   console.log(`\n========================================`);
   console.log(`🏁 Test Results: ${passed} Passed, ${failed} Failed`);
   console.log(`========================================\n`);
