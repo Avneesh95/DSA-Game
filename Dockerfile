@@ -20,7 +20,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY server/package.json server/package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy the rest of the server code
 COPY server/ .
