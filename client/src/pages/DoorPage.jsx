@@ -6,16 +6,16 @@ import {
   Play, Send, RefreshCw, Lightbulb, Loader2, Cpu,
   Sparkles, Maximize2, Minimize2, X, Terminal,
   CheckCircle, XCircle, FileCode2, Clock,
-  Home, Wand2,
+  Home, Wand2, Bug,
 } from 'lucide-react';
 
 import MainLayout from '../layouts/MainLayout';
 import KeysPanel from '../components/KeysPanel';
+import TestResultsPanel from '../components/TestResultsPanel';
 import HintPanel from '../components/HintPanel';
 import PatternQuiz from '../components/PatternQuiz';
 import DoorUnlockOverlay from '../components/DoorUnlockOverlay';
 import LanguageSelector from '../components/LanguageSelector';
-import StepVisualizer from '../visualizers/StepVisualizer';
 import { doorApi, submissionApi, progressApi } from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
@@ -53,6 +53,7 @@ export default function DoorPage() {
   const [hintsUsed,      setHintsUsed]      = useState(0);
   const [showUnlockOverlay, setShowUnlockOverlay] = useState(false);
   const [isFullscreen,   setIsFullscreen]   = useState(false);
+  const [showDebug,      setShowDebug]      = useState(false);
   const [lineCount,      setLineCount]      = useState(0);
   const [cursorPos,      setCursorPos]      = useState({ line: 1, col: 1 });
 
@@ -348,17 +349,7 @@ export default function DoorPage() {
             problem={problem}
           />
 
-          {/* Visualizer */}
-          <StepVisualizer
-            key={`vis-${doorNumber}`}
-            visualizationSteps={problem.visualizationSteps}
-            exampleInput={problem.examples[0]?.input}
-            topic={problem.topic}
-            runResult={runResult}
-            userCode={code}
-            onLineChange={handleLineChange}
-            autoPlay={submitResult?.doorUnlocked}
-          />
+
 
           {problem.solutionExplanation && submitResult?.doorUnlocked && (
             <div className="door-panel bg-dungeon-900/50">
@@ -640,6 +631,14 @@ export default function DoorPage() {
               )}
             </AnimatePresence>
           </div>
+
+          {/* Test Results Panel — LeetCode-style */}
+          <TestResultsPanel
+            keyResults={runResult?.keyResults}
+            compileError={runError}
+            showDebug={showDebug}
+            onToggleDebug={() => setShowDebug((v) => !v)}
+          />
 
           <KeysPanel keys={problem.keys} keyResults={runResult?.keyResults} />
 
