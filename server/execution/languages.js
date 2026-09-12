@@ -136,11 +136,8 @@ async function prepare(language, dir, harnessSource) {
     }
 
     if (!compileResult || compileResult.code !== 0) {
-      const errDetail = compileResult?.stderr || compileResult?.stdout || '';
-      if (!errDetail || compileResult?.code === -1) {
-        return { compileError: 'C++ compiler (g++) is not available on this server. Please use Java or Python.', run: null };
-      }
-      return { compileError: errDetail, run: null };
+      const errDetail = (compileResult?.stderr || compileResult?.stdout || '').trim();
+      return { compileError: errDetail || `C++ compilation failed (exit code ${compileResult ? compileResult.code : -1})`, run: null };
     }
 
     return {
