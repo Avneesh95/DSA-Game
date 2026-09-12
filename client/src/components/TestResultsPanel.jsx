@@ -4,40 +4,40 @@ import { CheckCircle, XCircle, Terminal, Bug, Clock, Layers, Sparkles, AlertTria
 import useThemeStore from '../store/useThemeStore';
 
 /**
- * Parses raw input string into data structure for diagram rendering
+ * Parses a single value or expression into a structured diagram descriptor
  */
-function parseInputStructure(rawInput) {
-  if (!rawInput) return null;
-  const str = String(rawInput).trim();
+function parseSingleStructure(label, rawVal) {
+  if (rawVal === undefined || rawVal === null) return null;
+  const str = String(rawVal).trim();
 
-  // Try parsing direct JSON
+  // Try direct JSON
   try {
-    const val = JSON.parse(str);
-    if (Array.isArray(val)) {
-      if (val.length > 0 && Array.isArray(val[0])) {
-        return { type: 'grid', data: val };
+    const parsed = JSON.parse(str);
+    if (Array.isArray(parsed)) {
+      if (parsed.length > 0 && Array.isArray(parsed[0])) {
+        return { label, type: 'grid', data: parsed };
       }
-      return { type: 'array', data: val };
+      return { label, type: 'array', data: parsed };
     }
   } catch (_) {}
 
-  // Grid / 2D Matrix: [[...],[...]]
+  // 2D Grid [[...],[...]]
   const gridIdx = str.indexOf('[[');
   if (gridIdx !== -1) {
     try {
       const sub = str.slice(gridIdx, str.lastIndexOf(']]') + 2).replace(/'/g, '"');
       const g = JSON.parse(sub);
-      if (Array.isArray(g) && Array.isArray(g[0])) return { type: 'grid', data: g };
+      if (Array.isArray(g) && Array.isArray(g[0])) return { label, type: 'grid', data: g };
     } catch (_) {}
   }
 
   // Linked list: 1 -> 2 -> 3
   if (str.includes('->')) {
     const parts = str.split('->').map((s) => s.trim()).filter(Boolean);
-    return { type: 'linked-list', data: parts };
+    return { label, type: 'linked-list', data: parts };
   }
 
-  // 1D Array: [ ... ]
+  // 1D Array [ ... ]
   const arrMatch = str.match(/\[([^\]]*)\]/);
   if (arrMatch) {
     const items = arrMatch[1]
@@ -45,125 +45,177 @@ function parseInputStructure(rawInput) {
       .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
       .filter(Boolean)
       .map((s) => (isNaN(Number(s)) ? s : Number(s)));
-    if (items.length > 0) return { type: 'array', data: items };
+    if (items.length > 0) return { label, type: 'array', data: items };
   }
 
-  // String: "abc"
-  const strMatch = str.match(/"([^"]+)"|'([^']+)'/);
+  // String "..."
+  const strMatch = str.match(/^"([^"]*)"|'([^']*)'$/);
   if (strMatch) {
-    const s = strMatch[1] || strMatch[2];
-    if (s && s.length <= 40) return { type: 'string', data: s.split('') };
+    const s = strMatch[1] || strMatch[2] || '';
+    if (s.length > 0 && s.length <= 40) return { label, type: 'string', data: s.split('') };
+  }
+
+  // Scalar number / bool
+  if (/^-?\d+(\.\d+)?$/.test(str) || str === 'true' || str === 'false') {
+    return { label, type: 'scalar', data: str };
   }
 
   return null;
 }
 
 /**
- * Diagram visualizer for input data structures (Arrays, Grids, Linked Lists, Strings)
+ * Parses full raw input string, extracting multiple named parameters if present
+ */
+function parseInputStructures(rawInput) {
+  if (!rawInput) return [];
+  const str = String(rawInput).trim();
+
+  // Check if input contains named params e.g. "nums = [2, 7, 11], target = 9"
+  if (str.includes('=')) {
+    const params = [];
+    const regex = /(?:^|,\s*)([a-zA-Z_]\w*)\s*=\s*(\[\[[\s\S]*?\]\]|\[[\s\S]*?\]|"[^"]*"|'[^']*'|[^,]+)/g;
+    let match;
+    while ((match = regex.exec(str)) !== null) {
+      const name = match[1].trim();
+      const val = match[2].trim();
+      const parsed = parseSingleStructure(name, val);
+      if (parsed) params.push(parsed);
+    }
+    if (params.length > 0) return params;
+  }
+
+  // Single anonymous input
+  const single = parseSingleStructure(null, str);
+  return single ? [single] : [];
+}
+
+/**
+ * Diagram visualizer for input data structures
  */
 function TestcaseDiagram({ inputStr, isLight }) {
-  const struct = parseInputStructure(inputStr);
-  if (!struct || !struct.data || struct.data.length === 0) return null;
+  const structures = parseInputStructures(inputStr);
+  if (!structures || structures.length === 0) return null;
 
   return (
-    <div className="mt-2 mb-1">
-      <div className="text-[10px] font-mono text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1">
-        <Layers size={11} className="text-glow-purple" /> Structure Diagram
+    <div className="mt-2 mb-1 space-y-2">
+      <div className="text-[10px] font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1">
+        <Layers size={11} className="text-violet-500" /> Structure Visualizer
       </div>
 
-      {/* 1D Array */}
-      {struct.type === 'array' && (
-        <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
-          {struct.data.slice(0, 25).map((val, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div
-                className={`min-w-[34px] h-[34px] px-2 flex items-center justify-center rounded-lg border font-mono text-xs font-semibold shadow-sm ${
-                  isLight
-                    ? 'bg-white border-violet-200 text-violet-900 shadow-violet-500/5'
-                    : 'bg-violet-950/40 border-violet-500/40 text-violet-200 shadow-violet-500/10'
-                }`}
-              >
-                {typeof val === 'object' ? JSON.stringify(val) : String(val)}
-              </div>
-              <span className="text-[9px] font-mono text-slate-400 dark:text-slate-400 mt-1">
-                {i}
+      <div className="space-y-2">
+        {structures.map((struct, idx) => (
+          <div key={idx} className="space-y-1">
+            {struct.label && (
+              <span className="text-[11px] font-mono font-bold text-[#ff9500]">
+                {struct.label} =
               </span>
-            </div>
-          ))}
-          {struct.data.length > 25 && (
-            <div className="flex items-center text-xs font-mono text-slate-400 px-2">
-              +{struct.data.length - 25} more
-            </div>
-          )}
-        </div>
-      )}
+            )}
 
-      {/* Grid / 2D Matrix */}
-      {struct.type === 'grid' && (
-        <div className="flex flex-col gap-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
-          {struct.data.slice(0, 8).map((row, r) => (
-            <div key={r} className="flex gap-1.5">
-              {Array.isArray(row) &&
-                row.slice(0, 12).map((cell, c) => (
-                  <div
-                    key={c}
-                    className={`w-8 h-8 flex items-center justify-center rounded-md border font-mono text-xs font-semibold ${
-                      isLight
-                        ? 'bg-white border-violet-200 text-violet-900'
-                        : 'bg-violet-950/40 border-violet-500/40 text-violet-200'
-                    }`}
-                  >
-                    {String(cell)}
+            {/* 1D Array */}
+            {struct.type === 'array' && (
+              <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
+                {struct.data.slice(0, 25).map((val, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <div
+                      className={`min-w-[34px] h-[34px] px-2 flex items-center justify-center rounded-lg border font-mono text-xs font-semibold shadow-sm ${
+                        isLight
+                          ? 'bg-white border-violet-200 text-violet-900 shadow-violet-500/5'
+                          : 'bg-violet-950/40 border-violet-500/40 text-violet-200 shadow-violet-500/10'
+                      }`}
+                    >
+                      {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                    </div>
+                    <span className="text-[9px] font-mono text-slate-400 mt-1">
+                      {i}
+                    </span>
                   </div>
                 ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Linked List */}
-      {struct.type === 'linked-list' && (
-        <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
-          {struct.data.slice(0, 15).map((val, i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <div
-                className={`min-w-[32px] h-[32px] px-2 rounded-full border flex items-center justify-center font-mono text-xs font-bold ${
-                  isLight
-                    ? 'bg-white border-violet-300 text-violet-900'
-                    : 'bg-violet-950/60 border-violet-500/50 text-violet-200'
-                }`}
-              >
-                {val}
+                {struct.data.length > 25 && (
+                  <div className="flex items-center text-xs font-mono text-slate-400 px-2">
+                    +{struct.data.length - 25} more
+                  </div>
+                )}
               </div>
-              {i < struct.data.length - 1 && (
-                <span className="text-violet-400 font-bold text-xs font-mono">→</span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+            )}
 
-      {/* String */}
-      {struct.type === 'string' && (
-        <div className="flex flex-wrap gap-1 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
-          {struct.data.slice(0, 30).map((char, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div
-                className={`w-7 h-7 flex items-center justify-center rounded-md border font-mono text-xs font-semibold ${
-                  isLight
-                    ? 'bg-white border-sky-200 text-sky-900'
-                    : 'bg-sky-950/40 border-sky-500/40 text-sky-200'
-                }`}
-              >
-                {char === ' ' ? '␣' : char}
+            {/* Grid / 2D Matrix */}
+            {struct.type === 'grid' && (
+              <div className="flex flex-col gap-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
+                {struct.data.slice(0, 8).map((row, r) => (
+                  <div key={r} className="flex gap-1.5">
+                    {Array.isArray(row) &&
+                      row.slice(0, 12).map((cell, c) => (
+                        <div
+                          key={c}
+                          className={`w-8 h-8 flex items-center justify-center rounded-md border font-mono text-xs font-semibold ${
+                            isLight
+                              ? 'bg-white border-violet-200 text-violet-900'
+                              : 'bg-violet-950/40 border-violet-500/40 text-violet-200'
+                          }`}
+                        >
+                          {String(cell)}
+                        </div>
+                      ))}
+                  </div>
+                ))}
               </div>
-              <span className="text-[9px] font-mono text-slate-400 dark:text-slate-400 mt-0.5">
-                {i}
+            )}
+
+            {/* Linked List */}
+            {struct.type === 'linked-list' && (
+              <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
+                {struct.data.slice(0, 15).map((val, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <div
+                      className={`min-w-[32px] h-[32px] px-2 rounded-full border flex items-center justify-center font-mono text-xs font-bold ${
+                        isLight
+                          ? 'bg-white border-violet-300 text-violet-900'
+                          : 'bg-violet-950/60 border-violet-500/50 text-violet-200'
+                      }`}
+                    >
+                      {val}
+                    </div>
+                    {i < struct.data.length - 1 && (
+                      <span className="text-violet-400 font-bold text-xs font-mono">→</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* String */}
+            {struct.type === 'string' && (
+              <div className="flex flex-wrap gap-1 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/[0.06] dark:border-white/[0.08] overflow-x-auto max-w-full">
+                {struct.data.slice(0, 30).map((char, i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <div
+                      className={`w-7 h-7 flex items-center justify-center rounded-md border font-mono text-xs font-semibold ${
+                        isLight
+                          ? 'bg-white border-sky-200 text-sky-900'
+                          : 'bg-sky-950/40 border-sky-500/40 text-sky-200'
+                      }`}
+                    >
+                      {char === ' ' ? '␣' : char}
+                    </div>
+                    <span className="text-[9px] font-mono text-slate-400 mt-0.5">
+                      {i}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Scalar */}
+            {struct.type === 'scalar' && (
+              <span className={`inline-block px-2.5 py-1 rounded-lg border font-mono text-xs font-bold ${
+                isLight ? 'bg-white border-amber-300 text-amber-900' : 'bg-amber-950/40 border-amber-500/40 text-amber-300'
+              }`}>
+                {struct.data}
               </span>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
