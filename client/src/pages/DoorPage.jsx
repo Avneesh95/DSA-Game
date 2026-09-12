@@ -16,6 +16,7 @@ import HintPanel from '../components/HintPanel';
 import PatternQuiz from '../components/PatternQuiz';
 import DoorUnlockOverlay from '../components/DoorUnlockOverlay';
 import LanguageSelector from '../components/LanguageSelector';
+import DungeonLoader from '../components/DungeonLoader';
 import { doorApi, submissionApi, progressApi } from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
@@ -215,10 +216,7 @@ export default function DoorPage() {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-[40vh] gap-3">
-          <Loader2 className="animate-spin text-glow-purple" size={24} />
-          <p className="text-slate-400 font-mono text-sm">Loading door {doorNumber}...</p>
-        </div>
+        <DungeonLoader message={`Unlocking Door ${doorNumber}...`} />
       </MainLayout>
     );
   }

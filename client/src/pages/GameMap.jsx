@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import MainLayout from '../layouts/MainLayout';
 import DoorCard from '../components/DoorCard';
 import XPBar from '../components/XPBar';
+import POTDCard from '../components/POTDCard';
+import DungeonLoader from '../components/DungeonLoader';
 import { doorApi } from '../services/api';
 import useAuthStore from '../store/useAuthStore';
 
@@ -17,7 +19,7 @@ export default function GameMap() {
     const fetchDoors = async () => {
       try {
         const { data } = await doorApi.getAll();
-        if (isMounted) setDoors(data.doors);
+        if (isMounted) setDoors(data.doors || []);
       } catch (err) {
         if (isMounted) setError(err.response?.data?.message || 'Failed to load the dungeon map');
       } finally {
@@ -43,9 +45,18 @@ export default function GameMap() {
 
   const totalCompleted = doors.filter((d) => d.status === 'COMPLETED').length;
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <DungeonLoader message="Connecting to Dungeon Realm..." />
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
-      <div className="mb-8">
+      {/* ── Top Header ── */}
+      <div className="mb-6">
         <h1 className="font-display text-xl sm:text-2xl text-glow-gold mb-1 drop-shadow-[0_0_12px_rgba(251,191,36,0.25)]">
           DSA 100 DOORS
         </h1>
@@ -67,8 +78,12 @@ export default function GameMap() {
         )}
       </div>
 
-      {isLoading && <p className="text-slate-400">Loading the dungeon...</p>}
-      {error && <p className="text-glow-rose">{error}</p>}
+      {/* ── Problem of the Day (POTD) Section (Top of Map) ── */}
+      {doors.length > 0 && (
+        <POTDCard doors={doors} user={user} />
+      )}
+
+      {error && <p className="text-glow-rose mb-4">{error}</p>}
 
       {!isLoading && !error && worldSections.length === 0 && (
         <div className="door-panel text-center py-10">
@@ -79,6 +94,7 @@ export default function GameMap() {
         </div>
       )}
 
+      {/* ── Worlds & Doors Grid ── */}
       <div className="space-y-8">
         {worldSections.map(({ world, doors: worldDoors }) => {
           const completedInWorld = worldDoors.filter((d) => d.status === 'COMPLETED').length;

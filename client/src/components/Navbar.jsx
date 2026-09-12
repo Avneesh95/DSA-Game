@@ -100,10 +100,23 @@ export default function Navbar() {
                 {user.streak || 0}
               </div>
 
-              {/* Username */}
-              <span className={`hidden sm:inline truncate max-w-[8rem] font-medium ${
-                isLight ? 'text-[#1d1d1f]' : 'text-white/70'
-              }`}>{user.name}</span>
+              {/* Profile Link */}
+              <Link
+                to="/profile"
+                className={`flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all ${
+                  isLight
+                    ? 'bg-black/[0.04] border-black/[0.08] text-[#1d1d1f] hover:bg-black/[0.08]'
+                    : 'bg-white/[0.06] border-white/[0.08] text-white hover:bg-white/[0.1]'
+                }`}
+                title="View your Hero Profile & Stats"
+              >
+                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#ff9500] to-violet-500 flex items-center justify-center text-[11px] font-bold text-black">
+                  {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="hidden sm:inline truncate max-w-[7rem] font-medium font-mono text-xs">
+                  {user.name}
+                </span>
+              </Link>
 
               {/* Logout */}
               <button

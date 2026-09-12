@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import GameMap from './pages/GameMap';
 import DoorPage from './pages/DoorPage';
+import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -16,6 +17,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <GameMap />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
