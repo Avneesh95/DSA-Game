@@ -197,7 +197,16 @@ app.get('/', (req, res) => {
 
 // --- Health check ---
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'DSA 100 Doors API is running' });
+  res.json({
+    success: true,
+    message: 'DSA 100 Doors API is running',
+    environment: {
+      platform: process.platform,
+      arch: process.arch,
+      node: process.version,
+      timestamp: new Date().toISOString(),
+    },
+  });
 });
 
 app.get('/api', (req, res) => {
