@@ -387,109 +387,136 @@ export default function StriverSDESheet() {
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="border-t border-black/[0.04] dark:border-white/[0.06] divide-y divide-black/[0.04] dark:divide-white/[0.06]"
+                      className="p-4 sm:p-5 border-t border-black/[0.04] dark:border-white/[0.06]"
                     >
-                      {problems.map((prob) => {
-                        const solved = isProblemSolved(prob);
-                        const bookmarked = bookmarkedIds.has(prob.id);
-                        const diffKey = prob.difficulty.toLowerCase();
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        {problems.map((prob) => {
+                          const solved = isProblemSolved(prob);
+                          const bookmarked = bookmarkedIds.has(prob.id);
+                          const diffKey = prob.difficulty.toLowerCase();
 
-                        return (
-                          <div
-                            key={prob.id}
-                            className={`px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                              solved
-                                ? isLight ? 'bg-emerald-50/40' : 'bg-emerald-950/10'
-                                : isLight ? 'hover:bg-slate-50/70' : 'hover:bg-white/[0.02]'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              {/* Checkbox */}
-                              <button
-                                onClick={() => toggleSolved(prob.id)}
-                                className={`shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                                  solved
-                                    ? 'bg-emerald-500 border-emerald-500 text-white'
-                                    : isLight
-                                    ? 'border-slate-300 hover:border-emerald-500 bg-white'
-                                    : 'border-white/20 hover:border-emerald-500 bg-black/30'
-                                }`}
-                                title={solved ? 'Mark as unsolved' : 'Mark as solved'}
-                              >
-                                {solved && <Check size={12} strokeWidth={3} />}
-                              </button>
+                          return (
+                            <motion.div
+                              key={prob.id}
+                              whileHover={{ y: -2 }}
+                              className={`rounded-xl border p-4 flex flex-col justify-between transition-all duration-200 relative overflow-hidden ${
+                                solved
+                                  ? isLight
+                                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-sm'
+                                    : 'bg-emerald-950/20 border-emerald-500/30'
+                                  : isLight
+                                  ? 'bg-white hover:bg-slate-50/80 border-slate-200 shadow-sm hover:shadow-md'
+                                  : 'bg-[#151517] hover:bg-[#1a1a1d] border-white/10 hover:border-white/20 shadow-sm'
+                              }`}
+                            >
+                              {solved && (
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+                              )}
 
-                              {/* Bookmark star */}
-                              <button
-                                onClick={() => toggleBookmark(prob.id)}
-                                className={`shrink-0 transition-colors ${
-                                  bookmarked ? 'text-amber-500' : 'text-slate-300 dark:text-white/20 hover:text-amber-400'
-                                }`}
-                                title={bookmarked ? 'Remove bookmark' : 'Bookmark problem'}
-                              >
-                                <Star size={14} fill={bookmarked ? 'currentColor' : 'none'} />
-                              </button>
+                              <div>
+                                {/* Top Row: Checkbox, Difficulty & Bookmark */}
+                                <div className="flex items-center justify-between gap-2 mb-2.5">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => toggleSolved(prob.id)}
+                                      className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                        solved
+                                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                                          : isLight
+                                          ? 'border-slate-300 hover:border-emerald-500 bg-white'
+                                          : 'border-white/20 hover:border-emerald-500 bg-black/30'
+                                      }`}
+                                      title={solved ? 'Mark as unsolved' : 'Mark as solved'}
+                                    >
+                                      {solved && <Check size={12} strokeWidth={3} />}
+                                    </button>
 
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`text-xs sm:text-sm font-medium ${
-                                    solved
-                                      ? 'text-slate-500 dark:text-slate-400 line-through'
-                                      : isLight ? 'text-slate-900' : 'text-slate-100'
-                                  }`}>
-                                    {prob.title}
-                                  </span>
-
-                                  {prob.doorNumber && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20 font-semibold">
-                                      <DoorOpen size={10} /> Door {prob.doorNumber}
+                                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border capitalize font-semibold ${
+                                      difficultyColors[diffKey] || difficultyColors.medium
+                                    }`}>
+                                      {prob.difficulty}
                                     </span>
-                                  )}
+                                  </div>
+
+                                  <button
+                                    onClick={() => toggleBookmark(prob.id)}
+                                    className={`p-1 rounded-md transition-colors ${
+                                      bookmarked
+                                        ? 'text-amber-500'
+                                        : 'text-slate-300 dark:text-white/20 hover:text-amber-400'
+                                    }`}
+                                    title={bookmarked ? 'Remove bookmark' : 'Bookmark problem'}
+                                  >
+                                    <Star size={14} fill={bookmarked ? 'currentColor' : 'none'} />
+                                  </button>
                                 </div>
 
-                                <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono text-slate-400">
-                                  <span className="italic">{prob.pattern}</span>
+                                {/* Problem Title */}
+                                <h4 className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 ${
+                                  solved
+                                    ? 'text-slate-500 dark:text-slate-400 line-through'
+                                    : isLight ? 'text-slate-900' : 'text-slate-100'
+                                }`}>
+                                  {prob.title}
+                                </h4>
+
+                                {/* Pattern Tag */}
+                                <div className="flex items-center gap-1.5 flex-wrap mb-4">
+                                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border font-medium ${
+                                    isLight
+                                      ? 'bg-red-50 border-red-200/80 text-red-700'
+                                      : 'bg-red-950/30 border-red-500/20 text-red-300'
+                                  }`}>
+                                    {prob.pattern}
+                                  </span>
                                 </div>
                               </div>
-                            </div>
 
-                            {/* Actions & Badges */}
-                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border capitalize font-semibold ${
-                                difficultyColors[diffKey] || difficultyColors.medium
-                              }`}>
-                                {prob.difficulty}
-                              </span>
+                              {/* Bottom Action Buttons */}
+                              <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
+                                {prob.doorNumber ? (
+                                  <button
+                                    onClick={() => navigate(`/door/${prob.doorNumber}`)}
+                                    className="flex-1 py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1 group"
+                                  >
+                                    <DoorOpen size={12} />
+                                    <span>Solve Door {prob.doorNumber}</span>
+                                    <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                                  </button>
+                                ) : (
+                                  <a
+                                    href={prob.leetcode}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`flex-1 py-1.5 px-3 rounded-lg font-mono text-xs border text-center transition-colors flex items-center justify-center gap-1 ${
+                                      isLight
+                                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300'
+                                    }`}
+                                  >
+                                    <span>Practice</span>
+                                    <ExternalLink size={11} />
+                                  </a>
+                                )}
 
-                              {prob.doorNumber ? (
-                                <button
-                                  onClick={() => navigate(`/door/${prob.doorNumber}`)}
-                                  className="text-xs px-2.5 py-1 rounded-lg font-mono font-semibold bg-[#ff9500] hover:bg-amber-400 text-black transition-all flex items-center gap-1 shadow-sm"
-                                  title="Solve inside DSA Dungeon Editor"
-                                >
-                                  <span>Solve Door {prob.doorNumber}</span>
-                                  <ArrowRight size={12} />
-                                </button>
-                              ) : (
                                 <a
                                   href={prob.leetcode}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className={`text-xs px-2.5 py-1 rounded-lg font-mono border transition-all flex items-center gap-1 ${
+                                  className={`p-1.5 rounded-lg border transition-colors ${
                                     isLight
-                                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300'
+                                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-500 hover:text-slate-700'
+                                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-400 hover:text-white'
                                   }`}
-                                  title="Open problem on LeetCode / External Practice"
+                                  title="Open problem on LeetCode"
                                 >
-                                  <span>Practice</span>
-                                  <ExternalLink size={11} />
+                                  <ExternalLink size={13} />
                                 </a>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, CheckCircle2, Circle, Search, ArrowRight, ExternalLink,
-  Star, Trophy, Filter, ShoppingBag, Shield, Compass,
+  Star, Trophy, Filter, ShoppingBag, Shield, Compass, Check, DoorOpen,
+  ListFilter, Flame,
 } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import { AMAZON_CATEGORIES, AMAZON_150_PROBLEMS } from '../data/amazon150Data';
@@ -22,6 +23,25 @@ export default function Amazon150() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Focus Areas');
   const [selectedDifficulty, setSelectedDifficulty] = useState('ALL');
+  const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
+  const [showOnlyUnsolved, setShowOnlyUnsolved] = useState(false);
+
+  // Persistent bookmarks and manual solved states
+  const [bookmarkedIds, setBookmarkedIds] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem('dsa100_amazon_bookmarks') || '[]'));
+    } catch {
+      return new Set();
+    }
+  });
+
+  const [customSolvedIds, setCustomSolvedIds] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem('dsa100_amazon_solved') || '[]'));
+    } catch {
+      return new Set();
+    }
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -43,9 +63,34 @@ export default function Amazon150() {
     return new Set(doors.filter((d) => d.status === 'COMPLETED').map((d) => d.doorNumber));
   }, [doors]);
 
+  const isProblemSolved = (p) => {
+    if (p.doorNumber && completedDoorNums.has(p.doorNumber)) return true;
+    return customSolvedIds.has(p.id);
+  };
+
+  const toggleSolved = (pId) => {
+    setCustomSolvedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(pId)) next.delete(pId);
+      else next.add(pId);
+      localStorage.setItem('dsa100_amazon_solved', JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const toggleBookmark = (pId) => {
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(pId)) next.delete(pId);
+      else next.add(pId);
+      localStorage.setItem('dsa100_amazon_bookmarks', JSON.stringify([...next]));
+      return next;
+    });
+  };
+
   const solvedAmazonCount = useMemo(() => {
-    return AMAZON_150_PROBLEMS.filter((p) => p.doorNumber && completedDoorNums.has(p.doorNumber)).length;
-  }, [completedDoorNums]);
+    return AMAZON_150_PROBLEMS.filter(isProblemSolved).length;
+  }, [completedDoorNums, customSolvedIds]);
 
   const totalProblems = AMAZON_150_PROBLEMS.length;
   const progressPct = Math.round((solvedAmazonCount / totalProblems) * 100) || 0;
@@ -53,15 +98,18 @@ export default function Amazon150() {
   // Filter problems
   const filteredProblems = useMemo(() => {
     return AMAZON_150_PROBLEMS.filter((p) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
+        p.title.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.tags.some((t) => t.toLowerCase().includes(q));
       const matchesDiff = selectedDifficulty === 'ALL' || p.difficulty.toUpperCase() === selectedDifficulty;
       const matchesCat = selectedCategory === 'All Focus Areas' || p.category === selectedCategory;
-      return matchesSearch && matchesDiff && matchesCat;
+      const matchesBookmark = !showOnlyBookmarks || bookmarkedIds.has(p.id);
+      const matchesSolved = !showOnlyUnsolved || !isProblemSolved(p);
+      return matchesSearch && matchesDiff && matchesCat && matchesBookmark && matchesSolved;
     });
-  }, [searchQuery, selectedDifficulty, selectedCategory]);
+  }, [searchQuery, selectedDifficulty, selectedCategory, showOnlyBookmarks, showOnlyUnsolved, bookmarkedIds, customSolvedIds, completedDoorNums]);
 
   if (isLoading) {
     return (
@@ -109,7 +157,7 @@ export default function Amazon150() {
                 Amazon SDE Interview Masterlist
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
-                The most frequently tested coding questions in Amazon SDE I, SDE II, and Senior SDE loops. Ranked by interview frequency and mapped directly to playable doors!
+                The most frequently tested coding questions in Amazon SDE I, SDE II, and Senior loops. Interactive cards with frequency meters, direct dungeon doors, and progress tracking.
               </p>
             </div>
 
@@ -156,6 +204,43 @@ export default function Amazon150() {
             ))}
           </div>
 
+          {/* Quick Filters Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setShowOnlyBookmarks((b) => !b)}
+                className={`text-xs px-3 py-1.5 rounded-xl font-mono transition-all border flex items-center gap-1.5 ${
+                  showOnlyBookmarks
+                    ? 'bg-amber-500 text-black border-amber-500 font-bold shadow-sm'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <Star size={13} fill={showOnlyBookmarks ? 'currentColor' : 'none'} />
+                <span>Bookmarked ({bookmarkedIds.size})</span>
+              </button>
+
+              <button
+                onClick={() => setShowOnlyUnsolved((u) => !u)}
+                className={`text-xs px-3 py-1.5 rounded-xl font-mono transition-all border flex items-center gap-1.5 ${
+                  showOnlyUnsolved
+                    ? 'bg-[#ff9500] text-black border-[#ff9500] font-bold shadow-sm'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <ListFilter size={13} />
+                <span>Unsolved Only</span>
+              </button>
+            </div>
+
+            <span className="text-xs font-mono text-slate-400">
+              Showing {filteredProblems.length} Amazon Interview Questions
+            </span>
+          </div>
+
           {/* Search + Difficulty Filter */}
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-between">
             <div className="relative w-full sm:w-80">
@@ -193,113 +278,160 @@ export default function Amazon150() {
           </div>
         </div>
 
-        {/* ── Questions Table ── */}
-        <div className={`rounded-3xl border overflow-hidden ${
-          isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#1c1c1e] border-white/10'
-        }`}>
-          <div className={`px-5 py-3 border-b flex items-center justify-between text-xs font-mono text-slate-400 ${
-            isLight ? 'bg-slate-50' : 'bg-white/[0.02]'
-          }`}>
-            <span>Showing {filteredProblems.length} Amazon Interview Questions</span>
-            <span>Frequency Rating</span>
+        {/* ── Problem Cards Grid ── */}
+        {filteredProblems.length === 0 ? (
+          <div className="text-center py-12 rounded-3xl border border-dashed border-slate-300 dark:border-white/10 text-slate-400 font-mono text-xs">
+            No questions found matching &quot;{searchQuery}&quot;. Try adjusting your search query or filters.
           </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {filteredProblems.map((p) => {
+              const solved = isProblemSolved(p);
+              const bookmarked = bookmarkedIds.has(p.id);
+              const diffKey = p.difficulty.toLowerCase();
 
-          {filteredProblems.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 font-mono text-xs">
-              No questions found matching &quot;{searchQuery}&quot;. Try adjusting your filters.
-            </div>
-          ) : (
-            <div className="divide-y divide-black/5 dark:divide-white/5">
-              {filteredProblems.map((p) => {
-                const isSolved = p.doorNumber && completedDoorNums.has(p.doorNumber);
-                const diffKey = p.difficulty.toLowerCase();
+              return (
+                <motion.div
+                  key={p.id}
+                  whileHover={{ y: -2 }}
+                  className={`rounded-xl border p-4 flex flex-col justify-between transition-all duration-200 relative overflow-hidden ${
+                    solved
+                      ? isLight
+                        ? 'bg-emerald-50/40 border-emerald-300/80 shadow-sm'
+                        : 'bg-emerald-950/20 border-emerald-500/30'
+                      : isLight
+                      ? 'bg-white hover:bg-slate-50/80 border-slate-200 shadow-sm hover:shadow-md'
+                      : 'bg-[#151517] hover:bg-[#1a1a1d] border-white/10 hover:border-white/20 shadow-sm'
+                  }`}
+                >
+                  {solved && (
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+                  )}
 
-                return (
-                  <div
-                    key={p.id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:px-5 gap-3 transition-colors ${
-                      isLight ? 'hover:bg-slate-50' : 'hover:bg-white/[0.02]'
-                    }`}
-                  >
-                    {/* Left details */}
-                    <div className="flex items-center gap-3">
-                      <div className="shrink-0">
-                        {isSolved ? (
-                          <CheckCircle2 size={18} className="text-emerald-500" />
-                        ) : (
-                          <Circle size={18} className="text-slate-400 dark:text-slate-600" />
-                        )}
-                      </div>
+                  <div>
+                    {/* Top Row: Checkbox, Difficulty, Frequency, Bookmark */}
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleSolved(p.id)}
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                            solved
+                              ? 'bg-emerald-500 border-emerald-500 text-white'
+                              : isLight
+                              ? 'border-slate-300 hover:border-emerald-500 bg-white'
+                              : 'border-white/20 hover:border-emerald-500 bg-black/30'
+                          }`}
+                          title={solved ? 'Mark as unsolved' : 'Mark as solved'}
+                        >
+                          {solved && <Check size={12} strokeWidth={3} />}
+                        </button>
 
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold font-display">{p.title}</span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono border capitalize font-medium ${difficultyColors[diffKey] || difficultyColors.medium}`}>
-                            {p.difficulty}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-[11px] font-mono text-[#ff9500] font-medium mr-1">
-                            {p.category}
-                          </span>
-                          {p.tags.map((t) => (
-                            <span
-                              key={t}
-                              className={`text-[10px] font-mono px-1.5 py-0.2 rounded border ${
-                                isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/5 text-slate-400'
-                              }`}
-                            >
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right action & stars */}
-                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                      {/* Frequency Stars */}
-                      <div className="flex items-center gap-0.5" title={`Interview Frequency: ${p.frequency}/5`}>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            size={12}
-                            className={i < p.frequency ? 'fill-[#ff9500] text-[#ff9500]' : 'text-slate-300 dark:text-slate-700'}
-                          />
-                        ))}
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border capitalize font-semibold ${
+                          difficultyColors[diffKey] || difficultyColors.medium
+                        }`}>
+                          {p.difficulty}
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {p.doorNumber && (
-                          <button
-                            onClick={() => navigate(`/door/${p.doorNumber}`)}
-                            className="px-3 py-1.5 rounded-xl font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center gap-1 group"
-                          >
-                            <span>Door {p.doorNumber}</span>
-                            <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-                          </button>
-                        )}
+                        {/* Frequency Stars */}
+                        <div className="flex items-center gap-0.5" title={`Interview Frequency: ${p.frequency}/5`}>
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              size={11}
+                              className={i < p.frequency ? 'fill-[#ff9500] text-[#ff9500]' : 'text-slate-300 dark:text-slate-700'}
+                            />
+                          ))}
+                        </div>
 
-                        <a
-                          href={p.leetcodeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`p-1.5 rounded-xl border text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors ${
-                            isLight ? 'bg-slate-100 border-slate-200' : 'bg-white/5 border-white/10'
+                        <button
+                          onClick={() => toggleBookmark(p.id)}
+                          className={`p-1 rounded-md transition-colors ${
+                            bookmarked
+                              ? 'text-amber-500'
+                              : 'text-slate-300 dark:text-white/20 hover:text-amber-400'
                           }`}
-                          title="View on LeetCode"
+                          title={bookmarked ? 'Remove bookmark' : 'Bookmark question'}
                         >
-                          <ExternalLink size={14} />
-                        </a>
+                          <Star size={14} fill={bookmarked ? 'currentColor' : 'none'} />
+                        </button>
                       </div>
                     </div>
+
+                    {/* Question Title */}
+                    <h4 className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 ${
+                      solved
+                        ? 'text-slate-500 dark:text-slate-400 line-through'
+                        : isLight ? 'text-slate-900' : 'text-slate-100'
+                    }`}>
+                      {p.title}
+                    </h4>
+
+                    {/* Category & Tags */}
+                    <div className="flex flex-wrap items-center gap-1.5 mb-4">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium">
+                        {p.category}
+                      </span>
+                      {p.tags.slice(0, 2).map((t) => (
+                        <span
+                          key={t}
+                          className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
+                            isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/5 text-slate-400'
+                          }`}
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+
+                  {/* Bottom Action Row */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
+                    {p.doorNumber ? (
+                      <button
+                        onClick={() => navigate(`/door/${p.doorNumber}`)}
+                        className="flex-1 py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1 group"
+                      >
+                        <DoorOpen size={12} />
+                        <span>Solve Door {p.doorNumber}</span>
+                        <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    ) : (
+                      <a
+                        href={p.leetcodeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex-1 py-1.5 px-3 rounded-lg font-mono text-xs border text-center transition-colors flex items-center justify-center gap-1 ${
+                          isLight
+                            ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+                            : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300'
+                        }`}
+                      >
+                        <span>Practice</span>
+                        <ExternalLink size={11} />
+                      </a>
+                    )}
+
+                    <a
+                      href={p.leetcodeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`p-1.5 rounded-lg border transition-colors ${
+                        isLight
+                          ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-500 hover:text-slate-700'
+                          : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-400 hover:text-white'
+                      }`}
+                      title="Open on LeetCode"
+                    >
+                      <ExternalLink size={13} />
+                    </a>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </MainLayout>
   );

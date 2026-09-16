@@ -81,7 +81,7 @@ public:
     const loginRes = await axios.post(`${API_BASE}/auth/login`, {
       email: 'admin@dsa100doors.dev',
       password: 'Admin1234',
-    }, { timeout: 15000 });
+    }, { timeout: 60000 });
 
     const token = loginRes.data?.token;
     assert(Boolean(token), 'Admin Login on Live Backend succeeded & acquired JWT token');
