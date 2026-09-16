@@ -181,7 +181,7 @@ export function getAlgorithmGuide(problem) {
 
 /**
  * Universal Multi-Language Code Formatter
- * Beautifies and normalizes indentation for C++, Java, Python, C, and JavaScript.
+ * Beautifies and normalizes indentation and spacing for C++, Java, Python, C, and JavaScript.
  */
 export function formatCode(sourceCode, language) {
   if (!sourceCode || typeof sourceCode !== 'string') return sourceCode;
@@ -212,9 +212,31 @@ function formatBraceLanguage(lines) {
       continue;
     }
     
-    const openBraces = (line.match(/\{/g) || []).length;
-    const closeBraces = (line.match(/\}/g) || []).length;
+    // Count unescaped braces outside comments/strings
+    let openCount = 0;
+    let closeCount = 0;
+    let inStr = false;
+    let strChar = '';
     
+    for (let c = 0; c < line.length; c++) {
+      const char = line[c];
+      const prev = c > 0 ? line[c - 1] : '';
+      
+      if ((char === '"' || char === "'") && prev !== '\\') {
+        if (!inStr) {
+          inStr = true;
+          strChar = char;
+        } else if (char === strChar) {
+          inStr = false;
+        }
+      } else if (!inStr) {
+        if (char === '/' && line[c + 1] === '/') break; // Line comment starts
+        if (char === '{') openCount++;
+        if (char === '}') closeCount++;
+      }
+    }
+    
+    // If line starts with closing brace/bracket, decrease indent for this line
     const startsWithClose = /^(\}|\]|\))/.test(line);
     if (startsWithClose) {
       indentLevel = Math.max(0, indentLevel - 1);
@@ -230,9 +252,9 @@ function formatBraceLanguage(lines) {
     formatted.push(indentStr.repeat(lineIndent) + line);
     
     if (!startsWithClose) {
-      indentLevel = Math.max(0, indentLevel + openBraces - closeBraces);
+      indentLevel = Math.max(0, indentLevel + openCount - closeCount);
     } else {
-      indentLevel = Math.max(0, indentLevel + openBraces - (closeBraces - 1));
+      indentLevel = Math.max(0, indentLevel + openCount - (closeCount - 1));
     }
   }
   
@@ -255,7 +277,7 @@ function formatPython(lines) {
       continue;
     }
     
-    if (/^(else|elif\s.*|except(\s.*)?|finally)\s*:/.test(line)) {
+    if (/^(else|elif(\s.*)?|except(\s.*)?|finally)\s*:/.test(line)) {
       indentLevel = Math.max(0, indentLevel - 1);
     }
     

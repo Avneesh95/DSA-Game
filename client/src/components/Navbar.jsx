@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { DoorOpen, Flame, LogOut, Zap, Sun, Moon, Sparkles, ShoppingBag, User } from 'lucide-react';
+import { DoorOpen, Flame, LogOut, Zap, Sun, Moon, Sparkles, ShoppingBag, User, BookOpen, Eye } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
 
@@ -24,6 +24,8 @@ export default function Navbar() {
     { label: '100 Doors', to: '/', icon: DoorOpen },
     { label: 'NeetCode 150', to: '/neetcode-150', icon: Zap },
     { label: 'Amazon 150', to: '/amazon-150', icon: ShoppingBag },
+    { label: 'Striver SDE', to: '/striver-sde', icon: BookOpen },
+    { label: 'Visual Academy', to: '/visual-concepts', icon: Eye },
   ];
 
   return (

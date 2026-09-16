@@ -1,6 +1,6 @@
 const https = require('https');
 
-const API_BASE = 'https://dsa-game.onrender.com/api';
+const API_BASE = 'https://dsa-game-8m8p.onrender.com/api';
 
 function request(url, method, data, token) {
   return new Promise((resolve, reject) => {
@@ -34,7 +34,7 @@ function request(url, method, data, token) {
 }
 
 async function testLive() {
-  console.log('Testing live backend submission API...');
+  console.log('Testing live backend with 3 C++ problem submissions...');
   
   // Login with demo admin
   const loginRes = await request(`${API_BASE}/auth/login`, 'POST', {
@@ -47,44 +47,53 @@ async function testLive() {
     return;
   }
   const token = loginRes.body.token;
-  console.log('✅ Logged in successfully. Token acquired.');
+  console.log('✅ Logged in successfully. Token acquired.\n');
 
-  // Fetch door 1
-  const doorRes = await request(`${API_BASE}/doors/1`, 'GET', null, token);
-  const problemId = doorRes.body?.problem?._id;
-  console.log(`✅ Loaded Door 1 (Problem ID: ${problemId})`);
+  const problemsToSolve = [
+    {
+      doorNum: 1,
+      title: 'Find Maximum Element',
+      code: 'class Solution {\npublic:\n    int findMaximum(vector<int>& nums) {\n        int mx = nums[0];\n        for (int x : nums) if (x > mx) mx = x;\n        return mx;\n    }\n};\n'
+    },
+    {
+      doorNum: 2,
+      title: 'Second Largest Element',
+      code: 'class Solution {\npublic:\n    int secondLargest(vector<int>& nums) {\n        long long first = -1e18, second = -1e18;\n        for (long long x : nums) {\n            if (x > first) {\n                second = first;\n                first = x;\n            } else if (x < first && x > second) {\n                second = x;\n            }\n        }\n        return second == -1e18 ? -1 : (int)second;\n    }\n};\n'
+    },
+    {
+      doorNum: 3,
+      title: 'Reverse Array',
+      code: 'class Solution {\npublic:\n    vector<int> reverseArray(vector<int>& nums) {\n        int l = 0, r = nums.size() - 1;\n        while (l < r) {\n            int tmp = nums[l];\n            nums[l] = nums[r];\n            nums[r] = tmp;\n            l++;\n            r--;\n        }\n        return nums;\n    }\n};\n'
+    }
+  ];
 
-  // Test Python
-  const pyCode = `class Solution:\n    def findMaximum(self, nums):\n        return max(nums)\n`;
-  console.log('\n--- Testing Python Submission ---');
-  const pySub = await request(`${API_BASE}/submissions/submit`, 'POST', {
-    problemId,
-    code: pyCode,
-    language: 'python'
-  }, token);
-  console.log(`Python Status: ${pySub.body?.status}, Keys: ${pySub.body?.keysCollectedCount}/${pySub.body?.totalKeys}, DoorUnlocked: ${pySub.body?.doorUnlocked}`);
+  for (const item of problemsToSolve) {
+    console.log('======================================================');
+    console.log(`🚀 Submitting C++ Solution for Door ${item.doorNum}: ${item.title}`);
 
-  // Test Java
-  const javaCode = `class Solution {\n    public int findMaximum(int[] nums) {\n        int max = nums[0];\n        for (int i = 1; i < nums.length; i++) {\n            if (nums[i] > max) max = nums[i];\n        }\n        return max;\n    }\n}\n`;
-  console.log('\n--- Testing Java Submission ---');
-  const javaSub = await request(`${API_BASE}/submissions/submit`, 'POST', {
-    problemId,
-    code: javaCode,
-    language: 'java'
-  }, token);
-  console.log('Java Response Status:', javaSub.status);
-  console.log('Java Response Body:', JSON.stringify(javaSub.body || javaSub.raw));
+    const doorRes = await request(`${API_BASE}/doors/${item.doorNum}`, 'GET', null, token);
+    const problemId = doorRes.body?.problem?._id;
 
-  // Test C++
-  const cppCode = `class Solution {\npublic:\n    int findMaximum(vector<int>& nums) {\n        int mx = nums[0];\n        for (int x : nums) if (x > mx) mx = x;\n        return mx;\n    }\n};\n`;
-  console.log('\n--- Testing C++ Submission ---');
-  const cppSub = await request(`${API_BASE}/submissions/submit`, 'POST', {
-    problemId,
-    code: cppCode,
-    language: 'cpp'
-  }, token);
-  console.log('C++ Response Status:', cppSub.status);
-  console.log('C++ Response Body:', JSON.stringify(cppSub.body || cppSub.raw));
+    const t0 = Date.now();
+    const subRes = await request(`${API_BASE}/submissions/submit`, 'POST', {
+      problemId,
+      code: item.code,
+      language: 'cpp'
+    }, token);
+    const duration = Date.now() - t0;
+
+    const data = subRes.body || {};
+    console.log(`📡 Response Status Code: ${subRes.status}`);
+    console.log(`🏆 Result Status: ${data.status}`);
+    console.log(`🔑 Keys Collected: ${data.keysCollectedCount}/${data.totalKeys}`);
+    console.log(`🔓 Door Unlocked: ${data.doorUnlocked}`);
+    console.log(`⏱️ Round-Trip Time: ${duration}ms`);
+    console.log('📊 Key Results:');
+    (data.keyResults || []).forEach((k, idx) => {
+      console.log(`   - Key #${idx + 1} [${k.keyType}]: Passed=${k.passed}, Output=${k.actualOutput}, Runtime=${k.runtimeMs}ms`);
+    });
+    console.log('');
+  }
 }
 
 testLive().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); });

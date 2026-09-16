@@ -6,7 +6,7 @@ import {
   Play, Send, RefreshCw, Lightbulb, Loader2, Cpu,
   Sparkles, Maximize2, Minimize2, X, Terminal,
   CheckCircle, XCircle, FileCode2, Clock,
-  Home, Wand2, Bug,
+  Home, Wand2, Bug, Eye,
 } from 'lucide-react';
 
 import MainLayout from '../layouts/MainLayout';
@@ -17,6 +17,7 @@ import PatternQuiz from '../components/PatternQuiz';
 import DoorUnlockOverlay from '../components/DoorUnlockOverlay';
 import LanguageSelector from '../components/LanguageSelector';
 import DungeonLoader from '../components/DungeonLoader';
+import StepVisualizer from '../visualizers/StepVisualizer';
 import { doorApi, submissionApi, progressApi } from '../services/api';
 import { formatCode } from '../utils/algorithmSteps';
 import useAuthStore from '../store/useAuthStore';
@@ -48,16 +49,17 @@ export default function DoorPage() {
   const [error,       setError]       = useState(null);
   const [runError,    setRunError]    = useState(null);
 
-  const [isRunning,      setIsRunning]      = useState(false);
-  const [runningAction,  setRunningAction]  = useState(null);
-  const [runResult,      setRunResult]      = useState(null);
-  const [submitResult,   setSubmitResult]   = useState(null);
-  const [hintsUsed,      setHintsUsed]      = useState(0);
-  const [showUnlockOverlay, setShowUnlockOverlay] = useState(false);
-  const [isFullscreen,   setIsFullscreen]   = useState(false);
-  const [showDebug,      setShowDebug]      = useState(false);
-  const [lineCount,      setLineCount]      = useState(0);
-  const [cursorPos,      setCursorPos]      = useState({ line: 1, col: 1 });
+  const [isRunning,          setIsRunning]          = useState(false);
+  const [runningAction,      setRunningAction]      = useState(null);
+  const [runResult,          setRunResult]          = useState(null);
+  const [submitResult,       setSubmitResult]       = useState(null);
+  const [hintsUsed,          setHintsUsed]          = useState(0);
+  const [showUnlockOverlay,  setShowUnlockOverlay]  = useState(false);
+  const [isFullscreen,       setIsFullscreen]       = useState(false);
+  const [showDebug,          setShowDebug]          = useState(false);
+  const [showVisualDebugger, setShowVisualDebugger] = useState(false);
+  const [lineCount,          setLineCount]          = useState(0);
+  const [cursorPos,          setCursorPos]          = useState({ line: 1, col: 1 });
 
   /* ── Fetch door ── */
   useEffect(() => {
@@ -129,7 +131,7 @@ export default function DoorPage() {
     if (decorationsRef.current) decorationsRef.current.clear();
   }, [doorData]);
 
-  const handleEditorMount = useCallback((editor) => {
+  const handleEditorMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
     setLineCount(editor.getModel()?.getLineCount() || 0);
 
@@ -139,29 +141,57 @@ export default function DoorPage() {
     editor.onDidChangeModelContent(() => {
       setLineCount(editor.getModel()?.getLineCount() || 0);
     });
+
+    // Register universal formatting providers so Alt+Shift+F and right-click work natively
+    if (monaco && monaco.languages) {
+      ['cpp', 'c', 'java', 'python', 'javascript'].forEach((l) => {
+        try {
+          monaco.languages.registerDocumentFormattingEditProvider(l, {
+            provideDocumentFormattingEdits(model) {
+              const text = model.getValue();
+              const formatted = formatCode(text, l);
+              return [
+                {
+                  range: model.getFullModelRange(),
+                  text: formatted || text,
+                },
+              ];
+            },
+          });
+        } catch (_) {}
+      });
+    }
   }, []);
 
   const handleFormat = useCallback(() => {
-    if (!editorRef.current) return;
     const editor = editorRef.current;
-    const model = editor.getModel();
-    if (!model) return;
+    const currentVal = editor ? editor.getValue() : code;
+    if (!currentVal) return;
 
     try {
-      const currentVal = editor.getValue();
       const formatted = formatCode(currentVal, language);
-      if (formatted && formatted !== currentVal) {
-        editor.executeEdits('codeFormatter', [{
-          range: model.getFullModelRange(),
-          text: formatted,
-        }]);
+      if (formatted) {
         setCode(formatted);
+        if (editor) {
+          const model = editor.getModel();
+          if (model) {
+            editor.pushUndoStop();
+            editor.executeEdits('codeFormatter', [
+              {
+                range: model.getFullModelRange(),
+                text: formatted,
+              },
+            ]);
+            editor.pushUndoStop();
+          } else {
+            editor.setValue(formatted);
+          }
+        }
       }
     } catch (_) {
-      // Fallback to Monaco's built-in action if available
-      editor.getAction('editor.action.formatDocument')?.run();
+      editor?.getAction('editor.action.formatDocument')?.run();
     }
-  }, [language]);
+  }, [code, language]);
 
   const handleDebug = async () => {
     if (!doorData) return;
@@ -169,6 +199,8 @@ export default function DoorPage() {
     setRunningAction('debug');
     setRunResult(null);
     setRunError(null);
+    setShowVisualDebugger(true);
+    setShowDebug(true);
     try {
       const { data } = await submissionApi.run({ problemId: doorData.problem._id, code, language });
       setRunResult({ ...data, mode: 'debug' });
@@ -184,6 +216,7 @@ export default function DoorPage() {
       setRunningAction(null);
     }
   };
+
 
   const handleLineChange = useCallback((lineNum) => {
     if (!editorRef.current) return;
@@ -423,7 +456,7 @@ export default function DoorPage() {
                 <LanguageSelector value={language} onChange={handleLanguageChange} />
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   onClick={handleDebug}
                   disabled={isRunning}
@@ -441,6 +474,22 @@ export default function DoorPage() {
                   <Bug size={12} className={isRunning && runningAction === 'debug' ? 'animate-spin text-sky-500' : 'text-sky-500 dark:text-cyan-400'} />
                   <span>{isRunning && runningAction === 'debug' ? 'Debugging...' : 'Debug'}</span>
                 </button>
+
+                <button
+                  onClick={() => setShowVisualDebugger((v) => !v)}
+                  className={`text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 font-semibold transition-all border ${
+                    showVisualDebugger
+                      ? 'bg-violet-600 border-violet-600 text-white shadow-sm'
+                      : isLight
+                      ? 'bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100'
+                      : 'bg-violet-950/40 border-violet-500/30 text-violet-300 hover:bg-violet-900/50'
+                  }`}
+                  title="Toggle interactive line-by-line visual stepper"
+                >
+                  <Eye size={12} />
+                  <span>{showVisualDebugger ? 'Hide Visualizer' : 'Visual Stepper'}</span>
+                </button>
+
                 {problem.referenceSolution?.code && (
                   <button
                     onClick={handleLoadSolution}
@@ -467,7 +516,7 @@ export default function DoorPage() {
                 </button>
                 <button
                   onClick={handleFormat}
-                  className={`text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all ${
+                  className={`text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all font-semibold ${
                     isLight
                       ? 'text-[#6e6e73] hover:text-[#007aff] hover:bg-black/[0.04]'
                       : 'text-white/50 hover:text-[#64d2ff] hover:bg-white/[0.06]'
@@ -497,6 +546,7 @@ export default function DoorPage() {
                   </button>
                 )}
               </div>
+
             </div>
 
             {/* Monaco Editor */}
@@ -687,6 +737,29 @@ export default function DoorPage() {
             </AnimatePresence>
           </div>
 
+          {/* Interactive Step-by-Step Visualizer & Execution Trace Drawer */}
+          <AnimatePresence>
+            {showVisualDebugger && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <StepVisualizer
+                  visualizationSteps={problem.visualizationSteps}
+                  exampleInput={problem.examples?.[0]?.input}
+                  topic={problem.topic}
+                  runResult={runResult}
+                  userCode={code}
+                  onLineChange={handleLineChange}
+                  autoPlay={false}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Test Results Panel — LeetCode-style */}
           <TestResultsPanel
             keyResults={runResult?.keyResults}
@@ -695,6 +768,7 @@ export default function DoorPage() {
             showDebug={showDebug}
             onToggleDebug={() => setShowDebug((v) => !v)}
           />
+
 
           <KeysPanel keys={problem.keys} keyResults={runResult?.keyResults} />
 

@@ -6,6 +6,8 @@ import DoorPage from './pages/DoorPage';
 import Profile from './pages/Profile';
 import NeetCode150 from './pages/NeetCode150';
 import Amazon150 from './pages/Amazon150';
+import StriverSDESheet from './pages/StriverSDESheet';
+import VisualConcepts from './pages/VisualConcepts';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -39,6 +41,22 @@ export default function App() {
         }
       />
       <Route
+        path="/striver-sde"
+        element={
+          <ProtectedRoute>
+            <StriverSDESheet />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/visual-concepts"
+        element={
+          <ProtectedRoute>
+            <VisualConcepts />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
@@ -59,3 +77,4 @@ export default function App() {
     </Routes>
   );
 }
+
