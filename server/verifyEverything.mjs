@@ -97,7 +97,7 @@ public:
     // Run C++ test submission on Door 1
     const cppCode = `class Solution {
 public:
-    int maxElement(vector<int>& nums) {
+    int findMaximum(vector<int>& nums) {
         int m = nums[0];
         for (int x : nums) {
             if (x > m) m = x;
@@ -119,7 +119,7 @@ public:
 
     // Run Python test submission on Door 1
     const pyCode = `class Solution:
-    def maxElement(self, nums: list[int]) -> int:
+    def findMaximum(self, nums: list[int]) -> int:
         return max(nums)`;
 
     const pyRes = await axios.post(`${API_BASE}/submissions/run`, {
@@ -131,11 +131,11 @@ public:
       timeout: 20000,
     });
 
-    assert(pyRes.data?.status === 'accepted', `Live Python Execution: accepted (${pyRes.data.keyResults.filter(k => k.passed).length}/5 keys passed, runtime: ${pyRes.data.runtimeMs}ms)`);
+    assert(pyRes.data?.status === 'accepted', `Live Python Execution: accepted (${pyRes.data.keyResults.filter(k => k.passed).length}/5 keys passed)`);
 
     // Run Java test submission on Door 1
     const javaCode = `class Solution {
-    public int maxElement(int[] nums) {
+    public int findMaximum(int[] nums) {
         int m = nums[0];
         for (int x : nums) {
             if (x > m) m = x;
@@ -153,7 +153,8 @@ public:
       timeout: 25000,
     });
 
-    assert(javaRes.data?.status === 'accepted', `Live Java Execution: accepted (${javaRes.data.keyResults.filter(k => k.passed).length}/5 keys passed, runtime: ${javaRes.data.runtimeMs}ms)`);
+    assert(javaRes.data?.status === 'accepted', `Live Java Execution: accepted (${javaRes.data.keyResults.filter(k => k.passed).length}/5 keys passed)`);
+
 
 
   } catch (err) {
