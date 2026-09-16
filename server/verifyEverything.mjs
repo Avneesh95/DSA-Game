@@ -115,7 +115,7 @@ public:
       timeout: 20000,
     });
 
-    assert(runRes.data?.status === 'accepted' && runRes.data?.keyResults?.length === 5, `Live C++ Execution: accepted (${runRes.data.keyResults.filter(k => k.passed).length}/5 keys passed, runtime: ${runRes.data.runtimeMs}ms)`);
+    assert(runRes.data?.status === 'accepted' && runRes.data?.keyResults?.every(k => k.passed), `Live C++ Run Execution: accepted (${runRes.data.keyResults.filter(k => k.passed).length}/${runRes.data.keyResults.length} public keys passed)`);
 
     // Run Python test submission on Door 1
     const pyCode = `class Solution:
@@ -131,7 +131,7 @@ public:
       timeout: 20000,
     });
 
-    assert(pyRes.data?.status === 'accepted', `Live Python Execution: accepted (${pyRes.data.keyResults.filter(k => k.passed).length}/5 keys passed)`);
+    assert(pyRes.data?.status === 'accepted' && pyRes.data?.keyResults?.every(k => k.passed), `Live Python Run Execution: accepted (${pyRes.data.keyResults.filter(k => k.passed).length}/${pyRes.data.keyResults.length} public keys passed)`);
 
     // Run Java test submission on Door 1
     const javaCode = `class Solution {
@@ -153,7 +153,21 @@ public:
       timeout: 25000,
     });
 
-    assert(javaRes.data?.status === 'accepted', `Live Java Execution: accepted (${javaRes.data.keyResults.filter(k => k.passed).length}/5 keys passed)`);
+    assert(javaRes.data?.status === 'accepted' && javaRes.data?.keyResults?.every(k => k.passed), `Live Java Run Execution: accepted (${javaRes.data.keyResults.filter(k => k.passed).length}/${javaRes.data.keyResults.length} public keys passed)`);
+
+    // Full Submission on Door 1 (All 5 hidden & public keys)
+    const submitRes = await axios.post(`${API_BASE}/submissions/submit`, {
+      problemId: door1.data.problem._id,
+      code: cppCode,
+      language: 'cpp',
+      hintsUsed: 0,
+    }, {
+      headers: authHeaders,
+      timeout: 25000,
+    });
+
+    assert(submitRes.data?.doorUnlocked === true && submitRes.data?.keyResults?.length === 5, `Live Full Submission: All 5/5 keys collected & Door 1 unlocked! (XP: +${submitRes.data.xpBreakdown?.total || 50} XP)`);
+
 
 
 
