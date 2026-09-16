@@ -58,6 +58,7 @@ export default function DoorPage() {
   const [isFullscreen,       setIsFullscreen]       = useState(false);
   const [showDebug,          setShowDebug]          = useState(false);
   const [showVisualDebugger, setShowVisualDebugger] = useState(false);
+  const [formatSuccess,      setFormatSuccess]      = useState(false);
   const [lineCount,          setLineCount]          = useState(0);
   const [cursorPos,          setCursorPos]          = useState({ line: 1, col: 1 });
 
@@ -180,6 +181,7 @@ export default function DoorPage() {
               {
                 range: model.getFullModelRange(),
                 text: formatted,
+                forceMoveMarkers: true,
               },
             ]);
             editor.pushUndoStop();
@@ -187,11 +189,14 @@ export default function DoorPage() {
             editor.setValue(formatted);
           }
         }
+        setFormatSuccess(true);
+        setTimeout(() => setFormatSuccess(false), 1800);
       }
     } catch (_) {
       editor?.getAction('editor.action.formatDocument')?.run();
     }
   }, [code, language]);
+
 
   const handleDebug = async () => {
     if (!doorData) return;
@@ -517,14 +522,18 @@ export default function DoorPage() {
                 <button
                   onClick={handleFormat}
                   className={`text-xs px-2.5 py-1 rounded-lg flex items-center gap-1 transition-all font-semibold ${
-                    isLight
+                    formatSuccess
+                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shadow-sm'
+                      : isLight
                       ? 'text-[#6e6e73] hover:text-[#007aff] hover:bg-black/[0.04]'
                       : 'text-white/50 hover:text-[#64d2ff] hover:bg-white/[0.06]'
                   }`}
-                  title="Format code (auto-indent)"
+                  title="Format code (auto-indent & beautify)"
                 >
-                  <Wand2 size={11} /> Format
+                  <Wand2 size={11} className={formatSuccess ? 'text-emerald-500 animate-spin' : ''} />
+                  <span>{formatSuccess ? 'Formatted!' : 'Format'}</span>
                 </button>
+
                 <button
                   onClick={() => setIsFullscreen((f) => !f)}
                   className={`text-xs p-1.5 rounded-lg transition-all ${
