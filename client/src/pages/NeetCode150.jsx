@@ -1,25 +1,17 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Zap, CheckCircle2, Circle, Search, ArrowRight, ExternalLink,
-  ChevronDown, ChevronUp, Trophy, Sparkles, Filter, BookOpen, Layers,
-  Star, Check, DoorOpen, ListFilter,
+  Zap, Search, ExternalLink,
+  ChevronDown, ChevronUp, Layers,
+  Star, Check, ListFilter, BookOpen,
 } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import { NEETCODE_TRACKS, NEETCODE_150_PROBLEMS } from '../data/neetcode150Data';
-import { doorApi } from '../services/api';
-import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
-import DungeonLoader from '../components/DungeonLoader';
 
 export default function NeetCode150() {
-  const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
   const isLight = useThemeStore((state) => state.theme) === 'light';
 
-  const [doors, setDoors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('ALL');
   const [selectedTrack, setSelectedTrack] = useState('ALL');
@@ -27,7 +19,7 @@ export default function NeetCode150() {
   const [showOnlyUnsolved, setShowOnlyUnsolved] = useState(false);
   const [expandedTracks, setExpandedTracks] = useState(() => new Set(NEETCODE_TRACKS.slice(0, 6)));
 
-  // Persistent bookmarks and custom solved state
+  // Persistent standalone bookmarks and solved state (100% independent of 100 doors game)
   const [bookmarkedIds, setBookmarkedIds] = useState(() => {
     try {
       return new Set(JSON.parse(localStorage.getItem('dsa100_neetcode_bookmarks') || '[]'));
@@ -44,30 +36,7 @@ export default function NeetCode150() {
     }
   });
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchDoors = async () => {
-      try {
-        const { data } = await doorApi.getAll();
-        if (isMounted) setDoors(data.doors || []);
-      } catch (err) {
-        console.error('Failed to load door states for NeetCode 150:', err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    fetchDoors();
-    return () => { isMounted = false; };
-  }, []);
-
-  const completedDoorNums = useMemo(() => {
-    return new Set(doors.filter((d) => d.status === 'COMPLETED').map((d) => d.doorNumber));
-  }, [doors]);
-
-  const isProblemSolved = (p) => {
-    if (p.doorNumber && completedDoorNums.has(p.doorNumber)) return true;
-    return customSolvedIds.has(p.id);
-  };
+  const isProblemSolved = (p) => customSolvedIds.has(p.id);
 
   const toggleSolved = (pId) => {
     setCustomSolvedIds((prev) => {
@@ -90,8 +59,8 @@ export default function NeetCode150() {
   };
 
   const solvedNeetCodeCount = useMemo(() => {
-    return NEETCODE_150_PROBLEMS.filter(isProblemSolved).length;
-  }, [completedDoorNums, customSolvedIds]);
+    return NEETCODE_150_PROBLEMS.filter((p) => customSolvedIds.has(p.id)).length;
+  }, [customSolvedIds]);
 
   const totalProblems = NEETCODE_150_PROBLEMS.length;
   const progressPct = Math.round((solvedNeetCodeCount / totalProblems) * 100) || 0;
@@ -123,7 +92,7 @@ export default function NeetCode150() {
       const matchesSolved = !showOnlyUnsolved || !isProblemSolved(p);
       return matchesSearch && matchesDiff && matchesTrack && matchesBookmark && matchesSolved;
     });
-  }, [searchQuery, selectedDifficulty, selectedTrack, showOnlyBookmarks, showOnlyUnsolved, bookmarkedIds, customSolvedIds, completedDoorNums]);
+  }, [searchQuery, selectedDifficulty, selectedTrack, showOnlyBookmarks, showOnlyUnsolved, bookmarkedIds, customSolvedIds]);
 
   // Group filtered problems by track
   const groupedByTrack = useMemo(() => {
@@ -134,14 +103,6 @@ export default function NeetCode150() {
     });
     return groups;
   }, [filteredProblems]);
-
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <DungeonLoader message="Loading NeetCode 150 roadmap..." />
-      </MainLayout>
-    );
-  }
 
   const difficultyColors = {
     easy: isLight ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30',
@@ -178,10 +139,10 @@ export default function NeetCode150() {
               </div>
 
               <h1 className="font-display text-xl sm:text-2xl font-bold">
-                NeetCode 150 Algorithm Roadmap
+                NeetCode 150 Practice Roadmap
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
-                The definitive blind 150 coding interview guide, organized into interactive cards with instant solution doors, checkboxes, and pattern tags.
+                The canonical blind 150 coding interview problems. Track your progress independently by marking each problem as solved with the checkbox.
               </p>
             </div>
 
@@ -190,7 +151,7 @@ export default function NeetCode150() {
               isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-white/5 border-white/10'
             }`}>
               <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Your Progress</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Your Solved Progress</span>
                 <span className="text-violet-500 font-bold">{solvedNeetCodeCount} / {totalProblems} ({progressPct}%)</span>
               </div>
               <div className="w-full h-2.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden mb-3">
@@ -201,7 +162,7 @@ export default function NeetCode150() {
               </div>
               <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
                 <span>18 Patterns</span>
-                <span className="text-emerald-500 font-semibold">{solvedNeetCodeCount} Cleared</span>
+                <span className="text-emerald-500 font-semibold">{solvedNeetCodeCount} Solved</span>
               </div>
             </div>
           </div>
@@ -385,33 +346,39 @@ export default function NeetCode150() {
                                 className={`rounded-xl border p-4 flex flex-col justify-between transition-all duration-200 relative overflow-hidden ${
                                   solved
                                     ? isLight
-                                      ? 'bg-emerald-50/40 border-emerald-300/80 shadow-sm'
-                                      : 'bg-emerald-950/20 border-emerald-500/30'
+                                      ? 'bg-emerald-50/50 border-emerald-400/80 shadow-sm'
+                                      : 'bg-emerald-950/20 border-emerald-500/40'
                                     : isLight
                                     ? 'bg-white hover:bg-slate-50/80 border-slate-200 shadow-sm hover:shadow-md'
                                     : 'bg-[#151517] hover:bg-[#1a1a1d] border-white/10 hover:border-white/20 shadow-sm'
                                 }`}
                               >
                                 {solved && (
-                                  <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+                                  <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/15 rounded-bl-full pointer-events-none" />
                                 )}
 
                                 <div>
-                                  {/* Top Row: Checkbox, Difficulty & Bookmark */}
+                                  {/* Top Row: Checkbox Box, Difficulty & Bookmark */}
                                   <div className="flex items-center justify-between gap-2 mb-2.5">
                                     <div className="flex items-center gap-2">
+                                      {/* Clear Mark Solved Checkbox Box */}
                                       <button
                                         onClick={() => toggleSolved(p.id)}
-                                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                        className={`px-2 py-1 rounded-md border flex items-center gap-1.5 font-mono text-xs font-semibold transition-all ${
                                           solved
-                                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
                                             : isLight
-                                            ? 'border-slate-300 hover:border-emerald-500 bg-white'
-                                            : 'border-white/20 hover:border-emerald-500 bg-black/30'
+                                            ? 'border-slate-300 hover:border-emerald-500 bg-slate-50 text-slate-600 hover:text-emerald-700'
+                                            : 'border-white/20 hover:border-emerald-500 bg-black/40 text-slate-400 hover:text-emerald-300'
                                         }`}
-                                        title={solved ? 'Mark as unsolved' : 'Mark as solved'}
+                                        title={solved ? 'Mark as Unsolved' : 'Mark as Solved'}
                                       >
-                                        {solved && <Check size={12} strokeWidth={3} />}
+                                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
+                                          solved ? 'bg-white text-emerald-600 border-white' : 'border-slate-400 dark:border-white/30'
+                                        }`}>
+                                          {solved && <Check size={10} strokeWidth={4} />}
+                                        </div>
+                                        <span>{solved ? 'Solved' : 'Mark Done'}</span>
                                       </button>
 
                                       <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border capitalize font-semibold ${
@@ -434,14 +401,19 @@ export default function NeetCode150() {
                                     </button>
                                   </div>
 
-                                  {/* Problem Title */}
-                                  <h4 className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 ${
-                                    solved
-                                      ? 'text-slate-500 dark:text-slate-400 line-through'
-                                      : isLight ? 'text-slate-900' : 'text-slate-100'
-                                  }`}>
+                                  {/* Problem Title (Opens directly on LeetCode) */}
+                                  <a
+                                    href={p.leetcodeUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block hover:underline ${
+                                      solved
+                                        ? 'text-slate-500 dark:text-slate-400 line-through'
+                                        : isLight ? 'text-slate-900 hover:text-violet-700' : 'text-slate-100 hover:text-violet-400'
+                                    }`}
+                                  >
                                     {p.title}
-                                  </h4>
+                                  </a>
 
                                   {/* Pattern Tag */}
                                   <div className="flex items-center gap-1.5 flex-wrap mb-4">
@@ -455,45 +427,16 @@ export default function NeetCode150() {
                                   </div>
                                 </div>
 
-                                {/* Bottom Action Buttons */}
-                                <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
-                                  {p.doorNumber ? (
-                                    <button
-                                      onClick={() => navigate(`/door/${p.doorNumber}`)}
-                                      className="flex-1 py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1 group"
-                                    >
-                                      <DoorOpen size={12} />
-                                      <span>Solve Door {p.doorNumber}</span>
-                                      <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                                    </button>
-                                  ) : (
-                                    <a
-                                      href={p.leetcodeUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className={`flex-1 py-1.5 px-3 rounded-lg font-mono text-xs border text-center transition-colors flex items-center justify-center gap-1 ${
-                                        isLight
-                                          ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                                          : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300'
-                                      }`}
-                                    >
-                                      <span>Practice</span>
-                                      <ExternalLink size={11} />
-                                    </a>
-                                  )}
-
+                                {/* Bottom Action: Solve Problem Link Directly in New Tab */}
+                                <div className="pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
                                   <a
                                     href={p.leetcodeUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`p-1.5 rounded-lg border transition-colors ${
-                                      isLight
-                                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-500 hover:text-slate-700'
-                                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-400 hover:text-white'
-                                    }`}
-                                    title="Open problem on LeetCode"
+                                    className="w-full py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1.5 group"
                                   >
-                                    <ExternalLink size={13} />
+                                    <span>Solve on LeetCode</span>
+                                    <ExternalLink size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                   </a>
                                 </div>
                               </motion.div>

@@ -1,25 +1,17 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles, CheckCircle2, Circle, Search, ArrowRight, ExternalLink,
-  ChevronDown, ChevronUp, Trophy, BookOpen, Layers, Bookmark,
-  Filter, Star, Code2, DoorOpen, Check, ListFilter,
+  Search, ExternalLink,
+  ChevronDown, ChevronUp, Layers,
+  Star, Check, ListFilter, BookOpen,
 } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import { STRIVER_TOPICS, STRIVER_PROBLEMS } from '../data/striverSheetData';
-import { doorApi } from '../services/api';
-import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
-import DungeonLoader from '../components/DungeonLoader';
 
 export default function StriverSDESheet() {
-  const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
   const isLight = useThemeStore((state) => state.theme) === 'light';
 
-  const [doors, setDoors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('ALL');
   const [selectedTopic, setSelectedTopic] = useState('ALL');
@@ -27,7 +19,7 @@ export default function StriverSDESheet() {
   const [showOnlyUnsolved, setShowOnlyUnsolved] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState(() => new Set(STRIVER_TOPICS.slice(0, 5)));
 
-  // Persistent manual bookmarks & custom solved overrides
+  // Persistent standalone bookmarks and custom solved state (100% independent of 100 doors game)
   const [bookmarkedIds, setBookmarkedIds] = useState(() => {
     try {
       return new Set(JSON.parse(localStorage.getItem('dsa100_striver_bookmarks') || '[]'));
@@ -44,31 +36,7 @@ export default function StriverSDESheet() {
     }
   });
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchDoors = async () => {
-      try {
-        const { data } = await doorApi.getAll();
-        if (isMounted) setDoors(data.doors || []);
-      } catch (err) {
-        console.error('Failed to load door states for Striver SDE Sheet:', err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    fetchDoors();
-    return () => { isMounted = false; };
-  }, []);
-
-  const completedDoorNums = useMemo(() => {
-    return new Set(doors.filter((d) => d.status === 'COMPLETED').map((d) => d.doorNumber));
-  }, [doors]);
-
-  // Check if problem is solved (either by Door completion or manual tick)
-  const isProblemSolved = (p) => {
-    if (p.doorNumber && completedDoorNums.has(p.doorNumber)) return true;
-    return customSolvedIds.has(p.id);
-  };
+  const isProblemSolved = (p) => customSolvedIds.has(p.id);
 
   const toggleSolved = (pId) => {
     setCustomSolvedIds((prev) => {
@@ -91,8 +59,8 @@ export default function StriverSDESheet() {
   };
 
   const solvedCount = useMemo(() => {
-    return STRIVER_PROBLEMS.filter(isProblemSolved).length;
-  }, [completedDoorNums, customSolvedIds]);
+    return STRIVER_PROBLEMS.filter((p) => customSolvedIds.has(p.id)).length;
+  }, [customSolvedIds]);
 
   const totalCount = STRIVER_PROBLEMS.length;
   const progressPct = Math.round((solvedCount / totalCount) * 100) || 0;
@@ -123,7 +91,7 @@ export default function StriverSDESheet() {
       const matchesSolved = !showOnlyUnsolved || !isProblemSolved(p);
       return matchesSearch && matchesDiff && matchesTopic && matchesBookmark && matchesSolved;
     });
-  }, [searchQuery, selectedDifficulty, selectedTopic, showOnlyBookmarks, showOnlyUnsolved, bookmarkedIds, customSolvedIds, completedDoorNums]);
+  }, [searchQuery, selectedDifficulty, selectedTopic, showOnlyBookmarks, showOnlyUnsolved, bookmarkedIds, customSolvedIds]);
 
   // Group by topic
   const groupedByTopic = useMemo(() => {
@@ -134,14 +102,6 @@ export default function StriverSDESheet() {
     });
     return groups;
   }, [filteredProblems]);
-
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <DungeonLoader message="Loading Striver SDE Sheet..." />
-      </MainLayout>
-    );
-  }
 
   const difficultyColors = {
     easy: isLight ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30',
@@ -159,94 +119,133 @@ export default function StriverSDESheet() {
             ? 'bg-gradient-to-r from-red-50/80 via-amber-50/40 to-white border-red-200/70 shadow-[0_4px_24px_rgba(239,68,68,0.06)]'
             : 'bg-gradient-to-r from-[#201111] via-[#1c1c1e] to-[#161618] border-red-500/30 shadow-[0_4px_32px_rgba(239,68,68,0.1)]'
         }`}>
-          <div className="absolute top-0 right-0 w-80 h-80 bg-red-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+          <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-500 text-white shadow-sm">
-                  <BookOpen size={13} /> Striver SDE Sheet
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-600 text-white shadow-sm">
+                  <BookOpen size={13} /> STRIVER SDE SHEET
                 </span>
-                <span className={`text-xs font-mono px-2.5 py-0.5 rounded-full border ${
-                  isLight ? 'bg-white/80 border-slate-200 text-slate-700' : 'bg-white/5 border-white/10 text-slate-300'
+                <span className={`text-xs font-mono px-2.5 py-1 rounded-full border ${
+                  isLight ? 'bg-white/80 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-slate-400'
                 }`}>
-                  191 Curated SDE Problems
+                  27 Modules · 149 Curated Problems
                 </span>
               </div>
 
-              <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight">
-                Master the <span className="text-red-500">Striver SDE Sheet</span>
+              <h1 className="font-display text-xl sm:text-2xl font-bold">
+                Striver SDE Practice Sheet
               </h1>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                The gold-standard curated roadmap by Raj Vikramaditya (Striver) for cracking FAANG / Tier-1 Software Engineering Interviews.
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
+                The renowned SDE preparation sheet by TakeUForward. Track your solved status independently with checkboxes and open problems directly in new tabs.
               </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-mono">
-                <span className="flex items-center gap-1 text-slate-500">
-                  <Layers size={13} /> {STRIVER_TOPICS.length} Core Modules
-                </span>
-                <span className="flex items-center gap-1 text-slate-500">
-                  <Code2 size={13} /> {totalCount} Hand-Picked Questions
-                </span>
-                <span className="flex items-center gap-1 text-emerald-500 font-semibold">
-                  <CheckCircle2 size={13} /> {solvedCount} Solved
-                </span>
-              </div>
             </div>
 
             {/* Progress Card */}
-            <div className={`shrink-0 p-4 rounded-xl border flex flex-col items-center justify-center min-w-[170px] ${
-              isLight ? 'bg-white/90 border-red-200 shadow-sm' : 'bg-black/40 border-white/10'
+            <div className={`p-4 rounded-2xl border min-w-[240px] ${
+              isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-white/5 border-white/10'
             }`}>
-              <div className="text-2xl sm:text-3xl font-display font-bold text-red-500">
-                {progressPct}%
+              <div className="flex items-center justify-between text-xs font-mono mb-1.5">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Striver Solved Progress</span>
+                <span className="text-red-500 font-bold">{solvedCount} / {totalCount} ({progressPct}%)</span>
               </div>
-              <div className="text-[11px] font-mono text-slate-500 mt-0.5">
-                {solvedCount} / {totalCount} Completed
-              </div>
-              <div className="w-full bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden mt-2.5">
+              <div className="w-full h-2.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden mb-3">
                 <div
-                  className="bg-red-500 h-full rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-red-500 to-amber-500 rounded-full transition-all duration-500"
                   style={{ width: `${progressPct}%` }}
                 />
+              </div>
+              <div className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
+                <span>27 Modules</span>
+                <span className="text-emerald-500 font-semibold">{solvedCount} Solved</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Search & Filters Bar ── */}
-        <div className={`p-4 rounded-2xl border space-y-3 ${
-          isLight ? 'bg-white border-black/[0.08] shadow-sm' : 'bg-[#1c1c1e] border-white/[0.08]'
-        }`}>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Search Input */}
-            <div className="relative flex-1">
+        {/* ── Filters & Search ── */}
+        <div className="space-y-3">
+          {/* Quick Filters Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setShowOnlyBookmarks((b) => !b)}
+                className={`text-xs px-3 py-1.5 rounded-xl font-mono transition-all border flex items-center gap-1.5 ${
+                  showOnlyBookmarks
+                    ? 'bg-amber-500 text-black border-amber-500 font-bold shadow-sm'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <Star size={13} fill={showOnlyBookmarks ? 'currentColor' : 'none'} />
+                <span>Bookmarked ({bookmarkedIds.size})</span>
+              </button>
+
+              <button
+                onClick={() => setShowOnlyUnsolved((u) => !u)}
+                className={`text-xs px-3 py-1.5 rounded-xl font-mono transition-all border flex items-center gap-1.5 ${
+                  showOnlyUnsolved
+                    ? 'bg-red-600 text-white border-red-600 font-bold shadow-sm'
+                    : isLight
+                    ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <ListFilter size={13} />
+                <span>Unsolved Only</span>
+              </button>
+
+              <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 hidden sm:block" />
+
+              <button
+                onClick={expandAll}
+                className="text-[11px] font-mono text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1"
+              >
+                Expand All
+              </button>
+              <button
+                onClick={collapseAll}
+                className="text-[11px] font-mono text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1"
+              >
+                Collapse All
+              </button>
+            </div>
+
+            <span className="text-xs font-mono text-slate-400">
+              Showing {filteredProblems.length} of {totalCount} problems
+            </span>
+          </div>
+
+          {/* Search + Difficulty Filter */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-between">
+            <div className="relative w-full sm:w-80">
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search problem title, pattern, or topic..."
+                placeholder="Search topic, pattern, or problem..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-9 pr-3.5 py-2 rounded-xl text-xs sm:text-sm font-mono transition-all border outline-none ${
+                className={`w-full pl-9 pr-4 py-2 rounded-xl text-xs font-mono border transition-all focus:outline-none focus:ring-2 focus:ring-red-500/30 ${
                   isLight
-                    ? 'bg-slate-50 border-slate-200 focus:bg-white focus:border-red-500 text-slate-800'
-                    : 'bg-black/40 border-white/10 focus:border-red-500/60 text-slate-200'
+                    ? 'bg-white border-slate-200 text-slate-800 placeholder-slate-400'
+                    : 'bg-[#1c1c1e] border-white/10 text-slate-200 placeholder-slate-500'
                 }`}
               />
             </div>
 
-            {/* Difficulty Tabs */}
-            <div className="flex items-center gap-1 bg-black/[0.04] dark:bg-white/[0.05] p-1 rounded-xl shrink-0 overflow-x-auto">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               {['ALL', 'EASY', 'MEDIUM', 'HARD'].map((diff) => (
                 <button
                   key={diff}
                   onClick={() => setSelectedDifficulty(diff)}
-                  className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-all ${
+                  className={`text-xs px-3 py-1.5 rounded-xl font-mono font-medium transition-all shrink-0 border ${
                     selectedDifficulty === diff
-                      ? isLight
-                        ? 'bg-white text-black shadow-sm font-bold'
-                        : 'bg-white/20 text-white font-bold'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-red-600 border-red-600 text-white font-bold shadow-sm'
+                      : isLight
+                      ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                   }`}
                 >
                   {diff}
@@ -254,74 +253,9 @@ export default function StriverSDESheet() {
               ))}
             </div>
           </div>
-
-          {/* Secondary Filter Row */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-slate-400 font-mono text-[11px] flex items-center gap-1">
-                <Filter size={11} /> Topic:
-              </span>
-              <select
-                value={selectedTopic}
-                onChange={(e) => setSelectedTopic(e.target.value)}
-                className={`px-2.5 py-1 rounded-lg border text-xs font-mono outline-none ${
-                  isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-black/40 border-white/10 text-slate-300'
-                }`}
-              >
-                <option value="ALL">All Modules ({STRIVER_TOPICS.length})</option>
-                {STRIVER_TOPICS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-
-              {/* Toggle Bookmarks */}
-              <button
-                onClick={() => setShowOnlyBookmarks((b) => !b)}
-                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1 font-mono text-xs transition-all ${
-                  showOnlyBookmarks
-                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-500 font-bold'
-                    : isLight
-                    ? 'bg-slate-50 border-slate-200 text-slate-600 hover:text-black'
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
-                }`}
-              >
-                <Bookmark size={11} /> Starred ({bookmarkedIds.size})
-              </button>
-
-              {/* Toggle Unsolved */}
-              <button
-                onClick={() => setShowOnlyUnsolved((u) => !u)}
-                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1 font-mono text-xs transition-all ${
-                  showOnlyUnsolved
-                    ? 'bg-red-500/15 border-red-500/40 text-red-500 font-bold'
-                    : isLight
-                    ? 'bg-slate-50 border-slate-200 text-slate-600 hover:text-black'
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white'
-                }`}
-              >
-                <Circle size={11} /> Unsolved Only
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={expandAll}
-                className="text-[11px] font-mono text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
-              >
-                Expand All
-              </button>
-              <span className="text-slate-400">·</span>
-              <button
-                onClick={collapseAll}
-                className="text-[11px] font-mono text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
-              >
-                Collapse All
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* ── Topic Groups List ── */}
+        {/* ── Topic Groups Accordion ── */}
         <div className="space-y-4">
           {Array.from(groupedByTopic.entries()).map(([topic, problems]) => {
             const isExpanded = expandedTopics.has(topic);
@@ -332,21 +266,21 @@ export default function StriverSDESheet() {
             return (
               <div
                 key={topic}
-                className={`rounded-2xl border overflow-hidden transition-all ${
-                  isLight ? 'bg-white border-black/[0.08] shadow-sm' : 'bg-[#1c1c1e] border-white/[0.08]'
+                className={`rounded-2xl border transition-all overflow-hidden ${
+                  isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#1c1c1e] border-white/10'
                 }`}
               >
-                {/* Group Header */}
+                {/* Topic Header */}
                 <button
                   onClick={() => toggleTopic(topic)}
-                  className={`w-full px-4 sm:px-5 py-3.5 flex items-center justify-between text-left transition-colors ${
-                    isLight ? 'hover:bg-slate-50' : 'hover:bg-white/[0.03]'
+                  className={`w-full flex items-center justify-between px-5 py-3.5 text-left border-b transition-colors ${
+                    isLight
+                      ? 'bg-slate-50/70 hover:bg-slate-100/80 border-slate-200'
+                      : 'bg-white/[0.02] hover:bg-white/[0.05] border-white/5'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`p-1.5 rounded-lg border text-red-500 ${
-                      isLight ? 'bg-red-50 border-red-200' : 'bg-red-950/40 border-red-500/30'
-                    }`}>
+                    <span className="w-8 h-8 rounded-xl bg-red-600/10 text-red-500 flex items-center justify-center font-bold text-xs">
                       <Layers size={14} />
                     </span>
                     <div>
@@ -402,33 +336,39 @@ export default function StriverSDESheet() {
                               className={`rounded-xl border p-4 flex flex-col justify-between transition-all duration-200 relative overflow-hidden ${
                                 solved
                                   ? isLight
-                                    ? 'bg-emerald-50/40 border-emerald-300/80 shadow-sm'
-                                    : 'bg-emerald-950/20 border-emerald-500/30'
+                                    ? 'bg-emerald-50/50 border-emerald-400/80 shadow-sm'
+                                    : 'bg-emerald-950/20 border-emerald-500/40'
                                   : isLight
                                   ? 'bg-white hover:bg-slate-50/80 border-slate-200 shadow-sm hover:shadow-md'
                                   : 'bg-[#151517] hover:bg-[#1a1a1d] border-white/10 hover:border-white/20 shadow-sm'
                               }`}
                             >
                               {solved && (
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/15 rounded-bl-full pointer-events-none" />
                               )}
 
                               <div>
-                                {/* Top Row: Checkbox, Difficulty & Bookmark */}
+                                {/* Top Row: Checkbox Box, Difficulty & Bookmark */}
                                 <div className="flex items-center justify-between gap-2 mb-2.5">
                                   <div className="flex items-center gap-2">
+                                    {/* Clear Mark Solved Checkbox Box */}
                                     <button
                                       onClick={() => toggleSolved(prob.id)}
-                                      className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                      className={`px-2 py-1 rounded-md border flex items-center gap-1.5 font-mono text-xs font-semibold transition-all ${
                                         solved
-                                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                                          ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
                                           : isLight
-                                          ? 'border-slate-300 hover:border-emerald-500 bg-white'
-                                          : 'border-white/20 hover:border-emerald-500 bg-black/30'
+                                          ? 'border-slate-300 hover:border-emerald-500 bg-slate-50 text-slate-600 hover:text-emerald-700'
+                                          : 'border-white/20 hover:border-emerald-500 bg-black/40 text-slate-400 hover:text-emerald-300'
                                       }`}
-                                      title={solved ? 'Mark as unsolved' : 'Mark as solved'}
+                                      title={solved ? 'Mark as Unsolved' : 'Mark as Solved'}
                                     >
-                                      {solved && <Check size={12} strokeWidth={3} />}
+                                      <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
+                                        solved ? 'bg-white text-emerald-600 border-white' : 'border-slate-400 dark:border-white/30'
+                                      }`}>
+                                        {solved && <Check size={10} strokeWidth={4} />}
+                                      </div>
+                                      <span>{solved ? 'Solved' : 'Mark Done'}</span>
                                     </button>
 
                                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border capitalize font-semibold ${
@@ -451,14 +391,19 @@ export default function StriverSDESheet() {
                                   </button>
                                 </div>
 
-                                {/* Problem Title */}
-                                <h4 className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 ${
-                                  solved
-                                    ? 'text-slate-500 dark:text-slate-400 line-through'
-                                    : isLight ? 'text-slate-900' : 'text-slate-100'
-                                }`}>
+                                {/* Problem Title (Opens directly on LeetCode/GFG) */}
+                                <a
+                                  href={prob.leetcode}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block hover:underline ${
+                                    solved
+                                      ? 'text-slate-500 dark:text-slate-400 line-through'
+                                      : isLight ? 'text-slate-900 hover:text-red-700' : 'text-slate-100 hover:text-red-400'
+                                  }`}
+                                >
                                   {prob.title}
-                                </h4>
+                                </a>
 
                                 {/* Pattern Tag */}
                                 <div className="flex items-center gap-1.5 flex-wrap mb-4">
@@ -472,45 +417,16 @@ export default function StriverSDESheet() {
                                 </div>
                               </div>
 
-                              {/* Bottom Action Buttons */}
-                              <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
-                                {prob.doorNumber ? (
-                                  <button
-                                    onClick={() => navigate(`/door/${prob.doorNumber}`)}
-                                    className="flex-1 py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1 group"
-                                  >
-                                    <DoorOpen size={12} />
-                                    <span>Solve Door {prob.doorNumber}</span>
-                                    <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                                  </button>
-                                ) : (
-                                  <a
-                                    href={prob.leetcode}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`flex-1 py-1.5 px-3 rounded-lg font-mono text-xs border text-center transition-colors flex items-center justify-center gap-1 ${
-                                      isLight
-                                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                                        : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300'
-                                    }`}
-                                  >
-                                    <span>Practice</span>
-                                    <ExternalLink size={11} />
-                                  </a>
-                                )}
-
+                              {/* Bottom Action: Solve Problem Link Directly in New Tab */}
+                              <div className="pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
                                 <a
                                   href={prob.leetcode}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className={`p-1.5 rounded-lg border transition-colors ${
-                                    isLight
-                                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-500 hover:text-slate-700'
-                                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-400 hover:text-white'
-                                  }`}
-                                  title="Open problem on LeetCode"
+                                  className="w-full py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1.5 group"
                                 >
-                                  <ExternalLink size={13} />
+                                  <span>Solve Problem</span>
+                                  <ExternalLink size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                 </a>
                               </div>
                             </motion.div>

@@ -9,6 +9,7 @@ const baseURL = import.meta.env.VITE_API_URL || '/api';
 const api = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 90000, // 90s — Render free tier cold starts can take up to 60s
 });
 
 // Attach the JWT to every request if we have one
@@ -28,6 +29,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('dsa100_token');
       localStorage.removeItem('dsa100_user');
+    }
+    // Make timeout errors have a clear message
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      error.response = error.response || {};
+      error.response.data = { message: 'Request timed out. The server is waking up — please retry in a few seconds.' };
     }
     return Promise.reject(error);
   }

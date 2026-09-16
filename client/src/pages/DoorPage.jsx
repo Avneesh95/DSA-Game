@@ -299,14 +299,41 @@ export default function DoorPage() {
     );
   }
 
-  if (error && !doorData) {
+  // Guard: show error if doorData is null for any reason (error string may be empty/falsy)
+  if (!doorData) {
     return (
       <MainLayout>
-        <div className="door-panel text-center py-10">
-          <p className="text-glow-rose mb-3">{error}</p>
-          <button onClick={() => navigate('/')} className="btn-secondary">
-            Back to Map
-          </button>
+        <div className="door-panel text-center py-12 space-y-4">
+          <div className="text-5xl mb-2">🚪</div>
+          <p className="text-glow-rose font-semibold text-base">
+            {error || 'Could not load this door. The server may be waking up (cold start).'}
+          </p>
+          <p className="text-slate-400 text-sm max-w-sm mx-auto">
+            The backend server can take up to 60 seconds to wake up after inactivity. Please wait a moment and try again.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                setIsLoading(true);
+                setError(null);
+                doorApi.getByNumber(doorNumber)
+                  .then(({ data }) => {
+                    setDoorData(data);
+                    setHintsUsed(data.progress?.hintsUsed || 0);
+                    const starter = data.problem.starterCode.find((s) => s.language === language) || data.problem.starterCode[0];
+                    setCode(starter?.code || '');
+                  })
+                  .catch((err) => setError(err.response?.data?.message || 'Failed to load this door'))
+                  .finally(() => setIsLoading(false));
+              }}
+              className="px-5 py-2 rounded-lg bg-[#ff9500] text-black font-display font-bold text-sm hover:brightness-110 transition-all shadow-md"
+            >
+              🔄 Retry
+            </button>
+            <button onClick={() => navigate('/')} className="btn-secondary">
+              ← Back to Map
+            </button>
+          </div>
         </div>
       </MainLayout>
     );
