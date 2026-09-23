@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Code2, ExternalLink,
+  Search, Code2, ExternalLink, BookOpen,
   ChevronDown, ChevronUp, Layers,
   Star, Check, ListFilter,
 } from 'lucide-react';
