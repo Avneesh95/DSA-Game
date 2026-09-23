@@ -4,10 +4,12 @@ import Editor from '@monaco-editor/react';
 import {
   X, Code2, ExternalLink, Check, ChevronDown, ChevronLeft, ChevronRight,
   RotateCcw, Maximize2, Minimize2, Save, Wand2, Lightbulb, BookOpen,
-  FileText, Zap, Sparkles, CheckCircle2, ShieldAlert, Cpu, Layers, HelpCircle,
+  FileText, Zap, Sparkles, CheckCircle2, ShieldAlert, Cpu, Layers, Bug,
+  Play, RefreshCw, Terminal,
 } from 'lucide-react';
 import useThemeStore from '../store/useThemeStore';
 import { formatCode } from '../utils/algorithmSteps';
+import StepVisualizer from '../visualizers/StepVisualizer';
 
 /* ── Starter code templates per language ── */
 const STARTER_TEMPLATES = {
@@ -17,9 +19,9 @@ const STARTER_TEMPLATES = {
  */
 
 class Solution {
-    // Write your solution below
+    // Write your optimal solution below
     public void solve() {
-        // TODO: Implement optimal solution
+        // TODO: Implement solution
     }
 }
 `,
@@ -31,7 +33,7 @@ Pattern: ${pattern || 'Data Structures & Algorithms'}
 
 class Solution:
     def solve(self):
-        # TODO: Implement optimal solution
+        # TODO: Implement solution
         pass
 `,
 
@@ -46,7 +48,7 @@ using namespace std;
 class Solution {
 public:
     void solve() {
-        // TODO: Implement optimal solution
+        // TODO: Implement solution
     }
 };
 `,
@@ -60,7 +62,7 @@ public:
  * @return {any}
  */
 function solve() {
-    // TODO: Implement optimal solution
+    // TODO: Implement solution
 }
 `,
 };
@@ -79,6 +81,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(1)',
     concept: 'Maintain two indices moving towards each other or at varying speeds to eliminate O(N²) quadratic nested loops into a single linear O(N) pass.',
     tips: ['Ensure array is sorted or monotonically ordered before converging.', 'Watch for boundary crossing condition: left < right vs left <= right.'],
+    exampleInput: 'nums = [2, 7, 11, 15], target = 9',
     steps: [
       'Initialize pointers (left = 0, right = n - 1).',
       'Evaluate condition between elements at left and right.',
@@ -91,6 +94,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(K) / O(1)',
     concept: 'Expand a right pointer to include elements in the window, and contract the left pointer when constraints are violated.',
     tips: ['Maintain a frequency map or running sum of current window.', 'Shrink window only while constraint is violated.'],
+    exampleInput: 'nums = [1, 3, -1, -3, 5, 3, 6, 7], k = 3',
     steps: [
       'Initialize left = 0, right = 0, and running state tracker.',
       'Expand window by processing nums[right].',
@@ -103,6 +107,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(N)',
     concept: 'Use LIFO ordering or monotonic stacks to find next greater/smaller elements and parse nested expressions in O(1) amortized time.',
     tips: ['Monotonic decreasing stack finds Next Greater Element.', 'Remember to check stack.isEmpty() before calling pop/peek.'],
+    exampleInput: 'temperatures = [73, 74, 75, 71, 69, 72, 76, 73]',
     steps: [
       'Initialize stack data structure.',
       'Iterate through elements from left to right.',
@@ -115,6 +120,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(1)',
     concept: 'Halve the search space at every step when monotonic ordering or a predicate function exists.',
     tips: ['Calculate mid as low + (high - low) / 2 to prevent integer overflow.', 'Check whether search space is discrete values or answer space.'],
+    exampleInput: 'nums = [-1, 0, 3, 5, 9, 12], target = 9',
     steps: [
       'Set bounds low = 0, high = n - 1.',
       'While low <= high, compute midpoint.',
@@ -127,6 +133,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(N) / O(1)',
     concept: 'Break problem into overlapping subproblems with optimal substructure; memoize or tabulate state transitions.',
     tips: ['Identify base cases (e.g. dp[0], empty string, single item).', 'Check if space can be optimized from O(N) to O(1) by keeping last 2 variables.'],
+    exampleInput: 'nums = [10, 9, 2, 5, 3, 7, 101, 18]',
     steps: [
       'Define state: what does dp[i] represent?',
       'Establish base cases.',
@@ -139,6 +146,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(H)',
     concept: 'Traverse hierarchical nodes using DFS (preorder, inorder, postorder) or BFS level-order traversal with a queue.',
     tips: ['Base case: if (node == null) return appropriate neutral value (0, true, null).', 'Postorder traversal is ideal when parent needs child subtree results.'],
+    exampleInput: 'root = [3, 9, 20, null, null, 15, 7]',
     steps: [
       'Check base case for null node.',
       'Recursively compute left subtree and right subtree.',
@@ -151,6 +159,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(V)',
     concept: 'Model vertices and edges. Use BFS for shortest path in unweighted graphs and DFS for cycle detection, topological sort, and connectivity.',
     tips: ['Always track visited nodes to avoid infinite cycles.', 'Topological sort uses Kahn algorithm (indegrees) or post-order DFS.'],
+    exampleInput: 'numCourses = 2, prerequisites = [[1, 0]]',
     steps: [
       'Build adjacency list from input edge list.',
       'Initialize visited set and queue/stack.',
@@ -163,6 +172,7 @@ const PATTERN_KNOWLEDGE = {
     space: 'O(1) / O(N)',
     concept: 'Analyze constraints, identify subproblems, and choose appropriate data structures (Hash Map, Priority Queue, or Pointers).',
     tips: ['Check edge cases: empty input, duplicates, large bounds.', 'Always verify time and space complexity against problem limits.'],
+    exampleInput: 'nums = [1, 2, 3, 4, 5]',
     steps: [
       'Clarify input types, boundaries, and expected return value.',
       'Identify the best-fitting data structure for optimal lookup/traversal.',
@@ -173,7 +183,7 @@ const PATTERN_KNOWLEDGE = {
 };
 
 function getPatternInfo(pattern = '', topic = '', category = '') {
-  const combined = `${pattern} ${topic} ${category}`.toLowerCase();
+  const combined = `${pattern || ''} ${topic || ''} ${category || ''}`.toLowerCase();
   for (const [key, val] of Object.entries(PATTERN_KNOWLEDGE)) {
     if (key !== 'default' && combined.includes(key)) {
       return { key, ...val };
@@ -190,7 +200,7 @@ export default function PracticeEditorModal({
   problem,
   onClose,
   onMarkDone,
-  isSolved,
+  isSolved = false,
   storagePrefix = 'sheet',
   sheetTitle = 'Practice Sheet',
   onPrevProblem,
@@ -198,10 +208,13 @@ export default function PracticeEditorModal({
   hasPrev = false,
   hasNext = false,
 }) {
+  if (!problem) return null;
+
   const isLight = useThemeStore((s) => s.theme) === 'light';
   const editorRef = useRef(null);
+  const decorationsRef = useRef(null);
 
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'blueprint' | 'notes'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'blueprint' | 'debugger' | 'notes'
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem('dsa100_practice_lang') || 'java';
   });
@@ -212,15 +225,17 @@ export default function PracticeEditorModal({
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const [lineCount, setLineCount] = useState(1);
 
-  // Storage keys
-  const codeKey = `dsa100_${storagePrefix}_code_${problem.id}_${language}`;
-  const notesKey = `dsa100_${storagePrefix}_notes_${problem.id}`;
+  const problemId = problem?.id || 'p-1';
+  const problemTitle = problem?.title || 'Coding Problem';
+  const patternName = problem?.pattern || problem?.topic || problem?.category || 'DSA Algorithm';
+  const patternInfo = useMemo(() => getPatternInfo(problem?.pattern, problem?.topic, problem?.category), [problem]);
 
-  const patternName = problem.pattern || problem.topic || problem.category || 'DSA Algorithm';
-  const patternInfo = useMemo(() => getPatternInfo(problem.pattern, problem.topic, problem.category), [problem]);
+  // Storage keys
+  const codeKey = `dsa100_${storagePrefix}_code_${problemId}_${language}`;
+  const notesKey = `dsa100_${storagePrefix}_notes_${problemId}`;
 
   const [code, setCode] = useState(() => {
-    return localStorage.getItem(codeKey) || (STARTER_TEMPLATES[language] || STARTER_TEMPLATES.java)(problem.title, patternName);
+    return localStorage.getItem(codeKey) || (STARTER_TEMPLATES[language] || STARTER_TEMPLATES.java)(problemTitle, patternName);
   });
 
   const [notes, setNotes] = useState(() => {
@@ -230,14 +245,14 @@ export default function PracticeEditorModal({
   // Sync code on problem or language change
   useEffect(() => {
     const saved = localStorage.getItem(codeKey);
-    const fallback = (STARTER_TEMPLATES[language] || STARTER_TEMPLATES.java)(problem.title, patternName);
+    const fallback = (STARTER_TEMPLATES[language] || STARTER_TEMPLATES.java)(problemTitle, patternName);
     setCode(saved || fallback);
-  }, [language, problem.id, codeKey, problem.title, patternName]);
+  }, [language, problemId, codeKey, problemTitle, patternName]);
 
   // Sync notes on problem change
   useEffect(() => {
     setNotes(localStorage.getItem(notesKey) || '');
-  }, [problem.id, notesKey]);
+  }, [problemId, notesKey]);
 
   // Save notes to localStorage
   const handleNotesChange = (e) => {
@@ -259,7 +274,7 @@ export default function PracticeEditorModal({
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const handleEditorMount = useCallback((editor) => {
+  const handleEditorMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
     setLineCount(editor.getModel()?.getLineCount() || 1);
 
@@ -269,6 +284,25 @@ export default function PracticeEditorModal({
     editor.onDidChangeModelContent(() => {
       setLineCount(editor.getModel()?.getLineCount() || 1);
     });
+
+    if (monaco && monaco.languages) {
+      ['cpp', 'c', 'java', 'python', 'javascript'].forEach((l) => {
+        try {
+          monaco.languages.registerDocumentFormattingEditProvider(l, {
+            provideDocumentFormattingEdits(model) {
+              const text = model.getValue();
+              const formatted = formatCode(text, l);
+              return [
+                {
+                  range: model.getFullModelRange(),
+                  text: formatted || text,
+                },
+              ];
+            },
+          });
+        } catch (_) {}
+      });
+    }
   }, []);
 
   const handleSave = useCallback(() => {
@@ -280,11 +314,11 @@ export default function PracticeEditorModal({
   }, [code, codeKey]);
 
   const handleReset = useCallback(() => {
-    const fresh = (STARTER_TEMPLATES[language] || STARTER_TEMPLATES.java)(problem.title, patternName);
+    const fresh = (STARTER_TEMPLATES[language] || STARTER_TEMPLATES.java)(problemTitle, patternName);
     setCode(fresh);
     if (editorRef.current) editorRef.current.setValue(fresh);
     localStorage.removeItem(codeKey);
-  }, [language, problem.title, patternName, codeKey]);
+  }, [language, problemTitle, patternName, codeKey]);
 
   const handleFormat = useCallback(() => {
     const editor = editorRef.current;
@@ -315,6 +349,18 @@ export default function PracticeEditorModal({
     }
   }, [code, language]);
 
+  const handleLineChange = useCallback((lineNum) => {
+    if (!editorRef.current) return;
+    const editor = editorRef.current;
+    const model = editor.getModel();
+    if (!model) return;
+    const validLine = Math.min(Math.max(1, lineNum), model.getLineCount());
+    editor.revealLineInCenter(validLine);
+    if (decorationsRef.current) {
+      decorationsRef.current.clear();
+    }
+  }, []);
+
   const handleLangChange = (lang) => {
     const val = editorRef.current ? editorRef.current.getValue() : code;
     localStorage.setItem(codeKey, val);
@@ -323,7 +369,7 @@ export default function PracticeEditorModal({
     setShowLangMenu(false);
   };
 
-  const leetUrl = problem.leetcodeUrl || problem.leetcode || `https://leetcode.com/problemset/all/?search=${encodeURIComponent(problem.title)}`;
+  const leetUrl = problem.leetcodeUrl || problem.leetcode || `https://leetcode.com/problemset/all/?search=${encodeURIComponent(problemTitle)}`;
 
   const diffColors = {
     easy: isLight ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40',
@@ -366,7 +412,7 @@ export default function PracticeEditorModal({
                     {sheetTitle}
                   </span>
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border font-bold capitalize ${diffColors[diffKey] || diffColors.medium}`}>
-                    {problem.difficulty}
+                    {problem.difficulty || 'Medium'}
                   </span>
                   {patternName && (
                     <span className={`hidden md:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full border ${
@@ -378,7 +424,7 @@ export default function PracticeEditorModal({
                 </div>
 
                 <h1 className="font-display font-bold text-sm sm:text-base leading-snug truncate max-w-[240px] sm:max-w-md md:max-w-xl text-slate-900 dark:text-slate-100">
-                  {problem.title}
+                  {problemTitle}
                 </h1>
               </div>
             </div>
@@ -421,7 +467,7 @@ export default function PracticeEditorModal({
 
               {/* Mark Solved / Done Button */}
               <button
-                onClick={() => onMarkDone(problem.id)}
+                onClick={() => onMarkDone(problemId)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-mono text-xs font-bold transition-all shadow-sm ${
                   isSolved
                     ? 'bg-emerald-500 border-emerald-500 text-white shadow-emerald-500/20'
@@ -468,37 +514,49 @@ export default function PracticeEditorModal({
           {/* ── TWO COLUMN SOLVING WORKSPACE ── */}
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 divide-y lg:divide-y-0 lg:divide-x divide-black/10 dark:divide-white/10">
 
-            {/* ── LEFT PANEL: Problem Details & Blueprint (5 Cols) ── */}
+            {/* ── LEFT PANEL: Problem Details, Blueprint & Debugger (5 Cols) ── */}
             <div className="lg:col-span-5 flex flex-col min-h-0 overflow-hidden bg-white dark:bg-[#151518]">
               {/* Tab Navigation */}
-              <div className="flex items-center border-b border-black/5 dark:border-white/5 px-3 pt-2 gap-1 shrink-0">
+              <div className="flex items-center border-b border-black/5 dark:border-white/5 px-3 pt-2 gap-1 shrink-0 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-semibold transition-all border-b-2 flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-semibold transition-all border-b-2 flex items-center gap-1.5 shrink-0 ${
                     activeTab === 'overview'
                       ? 'border-violet-500 text-violet-600 dark:text-violet-400 bg-violet-500/5'
                       : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
                   <BookOpen size={13} />
-                  <span>Overview & Guide</span>
+                  <span>Overview</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('blueprint')}
-                  className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-semibold transition-all border-b-2 flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-semibold transition-all border-b-2 flex items-center gap-1.5 shrink-0 ${
                     activeTab === 'blueprint'
                       ? 'border-violet-500 text-violet-600 dark:text-violet-400 bg-violet-500/5'
                       : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
                   <Lightbulb size={13} />
-                  <span>Algorithm Steps</span>
+                  <span>Algorithm</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('debugger')}
+                  className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-semibold transition-all border-b-2 flex items-center gap-1.5 shrink-0 ${
+                    activeTab === 'debugger'
+                      ? 'border-violet-500 text-violet-600 dark:text-violet-400 bg-violet-500/5'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Bug size={13} className="text-red-500" />
+                  <span>Live Debugger</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('notes')}
-                  className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-semibold transition-all border-b-2 flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-t-lg text-xs font-mono font-semibold transition-all border-b-2 flex items-center gap-1.5 shrink-0 ${
                     activeTab === 'notes'
                       ? 'border-violet-500 text-violet-600 dark:text-violet-400 bg-violet-500/5'
                       : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -519,7 +577,7 @@ export default function PracticeEditorModal({
                     }`}>
                       <div className="space-y-0.5">
                         <span className="text-[11px] font-mono text-[#ff9500] font-bold flex items-center gap-1">
-                          <ExternalLink size={12} /> Official Problem Statement
+                          <ExternalLink size={12} /> Official Problem on LeetCode
                         </span>
                         <p className="text-xs text-slate-600 dark:text-slate-300">
                           View full testcases, constraints, and community submissions on LeetCode.
@@ -606,6 +664,28 @@ export default function PracticeEditorModal({
                   </div>
                 )}
 
+                {activeTab === 'debugger' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/5">
+                      <span className="text-xs font-mono font-bold text-red-400 flex items-center gap-1.5">
+                        <Bug size={14} /> Live Step-by-Step Code Debugger
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {currentLangObj.label} Execution
+                      </span>
+                    </div>
+
+                    <StepVisualizer
+                      doorNumber={problem.doorNumber || 1}
+                      userCode={code}
+                      topic={patternName}
+                      exampleInput={patternInfo.exampleInput || '[1, 2, 3, 4, 5]'}
+                      onLineChange={handleLineChange}
+                      autoPlay={false}
+                    />
+                  </div>
+                )}
+
                 {activeTab === 'notes' && (
                   <div className="h-full flex flex-col space-y-2">
                     <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
@@ -679,8 +759,23 @@ export default function PracticeEditorModal({
                   </AnimatePresence>
                 </div>
 
-                {/* Right Utilities: Format, Reset, Save */}
+                {/* Right Utilities: Debug, Format, Reset, Save */}
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab('debugger')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs font-bold transition-all shadow-sm ${
+                      activeTab === 'debugger'
+                        ? 'bg-red-500 text-white border border-red-500 shadow-red-500/20'
+                        : isLight
+                        ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                        : 'border border-red-500/30 bg-red-950/30 text-red-400 hover:bg-red-900/40'
+                    }`}
+                    title="Debug Code with step visualizer"
+                  >
+                    <Bug size={13} />
+                    <span>Debug Code</span>
+                  </button>
+
                   <button
                     onClick={handleFormat}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-mono text-xs transition-all ${
