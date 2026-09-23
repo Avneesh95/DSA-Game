@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Code2,
+  Search, Code2, ExternalLink,
   ChevronDown, ChevronUp, Layers,
   Star, Check, ListFilter,
 } from 'lucide-react';
@@ -417,15 +417,28 @@ export default function StriverSDESheet() {
                                 </div>
                               </div>
 
-                              {/* Bottom Action: Open in-app code editor */}
-                              <div className="pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
+                              {/* Bottom Action: Practice in Editor + Direct LeetCode Link */}
+                              <div className="pt-2.5 border-t border-black/5 dark:border-white/5 mt-auto flex items-center gap-2">
                                 <button
                                   onClick={() => setActiveProblem(prob)}
-                                  className="w-full py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1.5 group"
+                                  className="flex-1 py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1.5 group"
                                 >
                                   <Code2 size={12} />
-                                  <span>Practice in Editor</span>
+                                  <span>Solve in App</span>
                                 </button>
+                                <a
+                                  href={prob.leetcode}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`p-1.5 rounded-lg border text-xs font-mono transition-all flex items-center justify-center ${
+                                    isLight
+                                      ? 'border-slate-300 text-slate-600 hover:border-[#ff9500] hover:text-[#ff9500] bg-slate-50'
+                                      : 'border-white/10 text-slate-400 hover:border-[#ff9500] hover:text-[#ff9500] bg-white/5'
+                                  }`}
+                                  title="Open problem on LeetCode"
+                                >
+                                  <ExternalLink size={13} />
+                                </a>
                               </div>
                             </motion.div>
                           );
@@ -442,15 +455,26 @@ export default function StriverSDESheet() {
       </div>
 
       {/* ── In-App Practice Editor Modal ── */}
-      {activeProblem && (
-        <PracticeEditorModal
-          problem={activeProblem}
-          onClose={() => setActiveProblem(null)}
-          onMarkDone={(id) => { toggleSolved(id); }}
-          isSolved={isProblemSolved(activeProblem)}
-          storagePrefix="striver"
-        />
-      )}
+      {activeProblem && (() => {
+        const activeIdx = STRIVER_PROBLEMS.findIndex((p) => p.id === activeProblem.id);
+        const hasPrev = activeIdx > 0;
+        const hasNext = activeIdx >= 0 && activeIdx < STRIVER_PROBLEMS.length - 1;
+
+        return (
+          <PracticeEditorModal
+            problem={activeProblem}
+            onClose={() => setActiveProblem(null)}
+            onMarkDone={(id) => { toggleSolved(id); }}
+            isSolved={isProblemSolved(activeProblem)}
+            storagePrefix="striver"
+            sheetTitle="Striver SDE Sheet"
+            hasPrev={hasPrev}
+            hasNext={hasNext}
+            onPrevProblem={() => { if (hasPrev) setActiveProblem(STRIVER_PROBLEMS[activeIdx - 1]); }}
+            onNextProblem={() => { if (hasNext) setActiveProblem(STRIVER_PROBLEMS[activeIdx + 1]); }}
+          />
+        );
+      })()}
     </MainLayout>
   );
 }
