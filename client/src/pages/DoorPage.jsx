@@ -77,9 +77,9 @@ export default function DoorPage() {
         if (!mounted) return;
         setDoorData(data);
         setHintsUsed(data.progress?.hintsUsed || 0);
-        const starter = data.problem.starterCode.find((s) => s.language === language) || data.problem.starterCode[0];
+        const starter = data?.problem?.starterCode?.find((s) => s.language === language) || data?.problem?.starterCode?.[0];
         setCode(starter?.code || '');
-        if (data.progress?.status === 'AVAILABLE') {
+        if (data?.progress?.status === 'AVAILABLE') {
           progressApi.update({ doorNumber: Number(doorNumber), status: 'IN_PROGRESS' }).catch(() => {});
         }
       } catch (err) {
@@ -106,7 +106,7 @@ export default function DoorPage() {
   const handleLanguageChange = useCallback((lang) => {
     setLanguage(lang);
     localStorage.setItem('dsa100_language', lang);
-    if (doorData) {
+    if (doorData?.problem?.starterCode) {
       const starter = doorData.problem.starterCode.find((s) => s.language === lang) || doorData.problem.starterCode[0];
       setCode(starter?.code || '');
       setRunResult(null);
@@ -116,7 +116,7 @@ export default function DoorPage() {
   }, [doorData]);
 
   const handleReset = useCallback(() => {
-    if (!doorData) return;
+    if (!doorData?.problem?.starterCode) return;
     const starter = doorData.problem.starterCode.find((s) => s.language === language) || doorData.problem.starterCode[0];
     setCode(starter?.code || '');
     setRunResult(null);
