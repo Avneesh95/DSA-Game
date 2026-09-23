@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, ExternalLink,
+  Search, Code2,
   ChevronDown, ChevronUp, Layers,
-  Star, Check, ListFilter, BookOpen,
+  Star, Check, ListFilter,
 } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import { STRIVER_TOPICS, STRIVER_PROBLEMS } from '../data/striverSheetData';
 import useThemeStore from '../store/useThemeStore';
+import PracticeEditorModal from '../components/PracticeEditorModal';
 
 export default function StriverSDESheet() {
   const isLight = useThemeStore((state) => state.theme) === 'light';
@@ -18,6 +19,7 @@ export default function StriverSDESheet() {
   const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
   const [showOnlyUnsolved, setShowOnlyUnsolved] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState(() => new Set(STRIVER_TOPICS.slice(0, 5)));
+  const [activeProblem, setActiveProblem] = useState(null); // problem open in editor modal
 
   // Persistent standalone bookmarks and custom solved state (100% independent of 100 doors game)
   const [bookmarkedIds, setBookmarkedIds] = useState(() => {
@@ -391,19 +393,17 @@ export default function StriverSDESheet() {
                                   </button>
                                 </div>
 
-                                {/* Problem Title (Opens directly on LeetCode/GFG) */}
-                                <a
-                                  href={prob.leetcode}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block hover:underline ${
+                                {/* Problem Title — click to open in-app editor */}
+                                <button
+                                  onClick={() => setActiveProblem(prob)}
+                                  className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block text-left hover:underline w-full ${
                                     solved
                                       ? 'text-slate-500 dark:text-slate-400 line-through'
                                       : isLight ? 'text-slate-900 hover:text-red-700' : 'text-slate-100 hover:text-red-400'
                                   }`}
                                 >
                                   {prob.title}
-                                </a>
+                                </button>
 
                                 {/* Pattern Tag */}
                                 <div className="flex items-center gap-1.5 flex-wrap mb-4">
@@ -417,17 +417,15 @@ export default function StriverSDESheet() {
                                 </div>
                               </div>
 
-                              {/* Bottom Action: Solve Problem Link Directly in New Tab */}
+                              {/* Bottom Action: Open in-app code editor */}
                               <div className="pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
-                                <a
-                                  href={prob.leetcode}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
+                                  onClick={() => setActiveProblem(prob)}
                                   className="w-full py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1.5 group"
                                 >
-                                  <span>Solve Problem</span>
-                                  <ExternalLink size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                </a>
+                                  <Code2 size={12} />
+                                  <span>Practice in Editor</span>
+                                </button>
                               </div>
                             </motion.div>
                           );
@@ -442,6 +440,17 @@ export default function StriverSDESheet() {
         </div>
 
       </div>
+
+      {/* ── In-App Practice Editor Modal ── */}
+      {activeProblem && (
+        <PracticeEditorModal
+          problem={activeProblem}
+          onClose={() => setActiveProblem(null)}
+          onMarkDone={(id) => { toggleSolved(id); }}
+          isSolved={isProblemSolved(activeProblem)}
+          storagePrefix="striver"
+        />
+      )}
     </MainLayout>
   );
 }

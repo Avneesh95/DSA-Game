@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search, ExternalLink,
+  Search, Code2,
   Star, ShoppingBag, Check,
   ListFilter,
 } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import { AMAZON_CATEGORIES, AMAZON_150_PROBLEMS } from '../data/amazon150Data';
 import useThemeStore from '../store/useThemeStore';
+import PracticeEditorModal from '../components/PracticeEditorModal';
 
 export default function Amazon150() {
   const isLight = useThemeStore((state) => state.theme) === 'light';
@@ -17,6 +18,7 @@ export default function Amazon150() {
   const [selectedDifficulty, setSelectedDifficulty] = useState('ALL');
   const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
   const [showOnlyUnsolved, setShowOnlyUnsolved] = useState(false);
+  const [activeProblem, setActiveProblem] = useState(null); // problem open in editor modal
 
   // Persistent standalone bookmarks and manual solved states
   const [bookmarkedIds, setBookmarkedIds] = useState(() => {
@@ -326,19 +328,17 @@ export default function Amazon150() {
                       </div>
                     </div>
 
-                    {/* Question Title (Opens directly on LeetCode) */}
-                    <a
-                      href={p.leetcodeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block hover:underline ${
+                    {/* Question Title — click to open in-app editor */}
+                    <button
+                      onClick={() => setActiveProblem(p)}
+                      className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block text-left hover:underline w-full ${
                         solved
                           ? 'text-slate-500 dark:text-slate-400 line-through'
                           : isLight ? 'text-slate-900 hover:text-[#bf5f00]' : 'text-slate-100 hover:text-amber-400'
                       }`}
                     >
                       {p.title}
-                    </a>
+                    </button>
 
                     {/* Category & Tags */}
                     <div className="flex flex-wrap items-center gap-1.5 mb-4">
@@ -358,17 +358,15 @@ export default function Amazon150() {
                     </div>
                   </div>
 
-                  {/* Bottom Action: Solve Problem Directly in New Tab */}
+                  {/* Bottom Action: Open in-app code editor */}
                   <div className="pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
-                    <a
-                      href={p.leetcodeUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => setActiveProblem(p)}
                       className="w-full py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1.5 group"
                     >
-                      <span>Solve on LeetCode</span>
-                      <ExternalLink size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </a>
+                      <Code2 size={12} />
+                      <span>Practice in Editor</span>
+                    </button>
                   </div>
                 </motion.div>
               );
@@ -376,6 +374,17 @@ export default function Amazon150() {
           </div>
         )}
       </div>
+
+      {/* ── In-App Practice Editor Modal ── */}
+      {activeProblem && (
+        <PracticeEditorModal
+          problem={activeProblem}
+          onClose={() => setActiveProblem(null)}
+          onMarkDone={(id) => { toggleSolved(id); }}
+          isSolved={isProblemSolved(activeProblem)}
+          storagePrefix="amazon"
+        />
+      )}
     </MainLayout>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, Terminal, Bug, Clock, Layers, Sparkles, AlertTriangle } from 'lucide-react';
 import useThemeStore from '../store/useThemeStore';

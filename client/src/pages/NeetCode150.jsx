@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Zap, Search, ExternalLink,
+  Zap, Search, Code2,
   ChevronDown, ChevronUp, Layers,
-  Star, Check, ListFilter, BookOpen,
+  Star, Check, ListFilter,
 } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import { NEETCODE_TRACKS, NEETCODE_150_PROBLEMS } from '../data/neetcode150Data';
 import useThemeStore from '../store/useThemeStore';
+import PracticeEditorModal from '../components/PracticeEditorModal';
 
 export default function NeetCode150() {
   const isLight = useThemeStore((state) => state.theme) === 'light';
@@ -18,6 +19,7 @@ export default function NeetCode150() {
   const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
   const [showOnlyUnsolved, setShowOnlyUnsolved] = useState(false);
   const [expandedTracks, setExpandedTracks] = useState(() => new Set(NEETCODE_TRACKS.slice(0, 6)));
+  const [activeProblem, setActiveProblem] = useState(null);
 
   // Persistent standalone bookmarks and solved state (100% independent of 100 doors game)
   const [bookmarkedIds, setBookmarkedIds] = useState(() => {
@@ -401,19 +403,17 @@ export default function NeetCode150() {
                                     </button>
                                   </div>
 
-                                  {/* Problem Title (Opens directly on LeetCode) */}
-                                  <a
-                                    href={p.leetcodeUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block hover:underline ${
+                                  {/* Problem Title — click to open in-app editor */}
+                                  <button
+                                    onClick={() => setActiveProblem(p)}
+                                    className={`text-xs sm:text-sm font-semibold font-display mb-1.5 leading-snug line-clamp-2 block text-left hover:underline w-full ${
                                       solved
                                         ? 'text-slate-500 dark:text-slate-400 line-through'
                                         : isLight ? 'text-slate-900 hover:text-violet-700' : 'text-slate-100 hover:text-violet-400'
                                     }`}
                                   >
                                     {p.title}
-                                  </a>
+                                  </button>
 
                                   {/* Pattern Tag */}
                                   <div className="flex items-center gap-1.5 flex-wrap mb-4">
@@ -427,17 +427,15 @@ export default function NeetCode150() {
                                   </div>
                                 </div>
 
-                                {/* Bottom Action: Solve Problem Link Directly in New Tab */}
+                                {/* Bottom Action: Practice in Editor */}
                                 <div className="pt-2 border-t border-black/5 dark:border-white/5 mt-auto">
-                                  <a
-                                    href={p.leetcodeUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <button
+                                    onClick={() => setActiveProblem(p)}
                                     className="w-full py-1.5 px-3 rounded-lg font-mono text-xs font-semibold text-black bg-[#ff9500] hover:brightness-110 shadow-sm transition-all flex items-center justify-center gap-1.5 group"
                                   >
-                                    <span>Solve on LeetCode</span>
-                                    <ExternalLink size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                  </a>
+                                    <Code2 size={12} />
+                                    <span>Practice in Editor</span>
+                                  </button>
                                 </div>
                               </motion.div>
                             );
@@ -452,6 +450,17 @@ export default function NeetCode150() {
           </div>
         )}
       </div>
+
+      {/* ── In-App Practice Editor Modal ── */}
+      {activeProblem && (
+        <PracticeEditorModal
+          problem={activeProblem}
+          onClose={() => setActiveProblem(null)}
+          onMarkDone={(id) => { toggleSolved(id); }}
+          isSolved={isProblemSolved(activeProblem)}
+          storagePrefix="neetcode"
+        />
+      )}
     </MainLayout>
   );
 }
